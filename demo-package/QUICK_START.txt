@@ -1,0 +1,48 @@
+🚌 DUBAI BUS BUDDY - QUICK START GUIDE
+========================================
+
+🎯 WHAT IS THIS?
+A professional real-time bus information app with beautiful gold theme!
+
+✨ FEATURES:
+- Real-time bus information (demo data)
+- Beautiful gold/dark theme
+- PWA ready (install as app)
+- Responsive design
+- Auto-updating every 30 seconds
+
+🚀 HOW TO RUN (3 OPTIONS):
+
+OPTION 1 - INSTANT PREVIEW (EASIEST):
+1. Double-click on "dist/index.html"
+2. App opens in your browser immediately
+3. No installation needed!
+
+OPTION 2 - LOCAL SERVER:
+1. Install Node.js from nodejs.org
+2. Open command prompt in this folder
+3. Run: npm install
+4. Run: npm run dev
+5. Open: http://localhost:5173
+
+OPTION 3 - DEPLOY ONLINE:
+1. Upload "dist" folder to any web hosting
+2. Share the URL with friends
+
+📱 PWA INSTALLATION:
+- Mobile: Look for "Add to Home Screen"
+- Desktop: Click install icon in browser
+
+🎮 TRY THESE FEATURES:
+1. Search for "Al Jafiliya" or "AJS"
+2. Add stops to favorites
+3. Watch real-time updates
+4. Check the settings (⚙️ icon)
+
+📁 FILES INCLUDED:
+- dist/ - Production app (ready to use)
+- DEMO_README.md - Detailed documentation
+- This file - Quick start guide
+
+🎉 ENJOY THE DEMO!
+Share this with friends to show them a professional transit app!

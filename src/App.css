@@ -1,0 +1,377 @@
+/* 全局样式 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d1b0e 100%);
+}
+
+/* 金色主题变量 */
+:root {
+  --gold-primary: #ffd700;
+  --gold-secondary: #ffed4e;
+  --gold-accent: #ffb347;
+  --gold-dark: #b8860b;
+  --gold-light: #fff8dc;
+  --dark-bg: #1a1a1a;
+  --dark-card: #2d1b0e;
+  --dark-surface: #3d2b1e;
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #b0b0b0;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-surface);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gold-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-secondary);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* 组件动画 */
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--dark-surface) 25%, var(--gold-primary) 50%, var(--dark-surface) 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* 金色主题样式 */
+.gold-gradient {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 50%, var(--gold-accent) 100%);
+}
+
+.gold-border {
+  border: 2px solid var(--gold-primary);
+}
+
+.gold-shadow {
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+}
+
+.gold-text {
+  color: var(--gold-primary);
+}
+
+.gold-bg {
+  background: var(--gold-primary);
+}
+
+/* 卡片样式 */
+.card {
+  background: var(--dark-card);
+  border-radius: 16px;
+  border: 1px solid var(--gold-primary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.card-header {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+  color: var(--dark-bg);
+  padding: 16px 20px;
+  border-radius: 16px 16px 0 0;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* 按钮样式 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+  color: var(--dark-bg);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.btn-secondary {
+  background: var(--dark-surface);
+  color: var(--gold-primary);
+  border: 2px solid var(--gold-primary);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--gold-primary);
+  color: var(--dark-bg);
+}
+
+/* 状态指示器 */
+.status-live {
+  background: var(--success);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-live::before {
+  content: "●";
+  animation: pulse 2s infinite;
+}
+
+/* 时间显示 */
+.eta-display {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--gold-primary);
+  text-align: center;
+  padding: 8px;
+  background: var(--dark-surface);
+  border-radius: 8px;
+  border: 2px solid var(--gold-primary);
+}
+
+.eta-urgent {
+  color: var(--danger);
+  animation: pulse 1s infinite;
+}
+
+.eta-soon {
+  color: var(--warning);
+}
+
+.eta-normal {
+  color: var(--success);
+}
+
+/* 路线标识 */
+.route-badge {
+  background: var(--gold-primary);
+  color: var(--dark-bg);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* 搜索框 */
+.search-input {
+  background: var(--dark-surface);
+  border: 2px solid var(--gold-primary);
+  color: var(--text-primary);
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 16px;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--gold-secondary);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .card {
+    margin: 8px;
+    border-radius: 12px;
+  }
+  
+  .card-header {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+  
+  .eta-display {
+    font-size: 20px;
+  }
+  
+  .route-badge {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dark-bg: #000000;
+    --dark-card: #1a0f00;
+    --dark-surface: #2a1f10;
+  }
+}
+
+/* 加载动画 */
+.loading-spinner {
+  border: 3px solid var(--dark-surface);
+  border-top: 3px solid var(--gold-primary);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 通知样式 */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--gold-primary);
+  color: var(--dark-bg);
+  padding: 16px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* 站点信息卡片 */
+.stop-info {
+  background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark-surface) 100%);
+  border: 2px solid var(--gold-primary);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.stop-info::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold-primary), var(--gold-secondary), var(--gold-accent));
+}
+
+/* 公交信息网格 */
+.bus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.bus-card {
+  background: var(--dark-surface);
+  border: 1px solid var(--gold-primary);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.bus-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.2);
+}
+
+/* 实时更新指示器 */
+.realtime-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.realtime-indicator::before {
+  content: "●";
+  animation: pulse 2s infinite;
+}
