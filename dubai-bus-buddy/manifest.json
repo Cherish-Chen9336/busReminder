@@ -2,17 +2,17 @@
   "name": "迪拜公交助手",
   "short_name": "公交助手",
   "description": "实时公交信息提醒应用，帮助您及时了解公交到达时间",
-  "start_url": "/dubai-bus-buddy/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "orientation": "portrait-primary",
-  "scope": "/dubai-bus-buddy/",
+  "scope": "/",
   "lang": "zh-CN",
   "dir": "ltr",
   "icons": [
     {
-      "src": "/dubai-bus-buddy/icon-placeholder.svg",
+      "src": "/icon-placeholder.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -21,13 +21,13 @@
   "categories": ["travel", "utilities", "productivity"],
   "screenshots": [
     {
-      "src": "/dubai-bus-buddy/screenshot-wide.png",
+      "src": "/screenshot-wide.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "/dubai-bus-buddy/screenshot-narrow.png",
+      "src": "/screenshot-narrow.png",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow"
@@ -38,10 +38,10 @@
       "name": "搜索站点",
       "short_name": "搜索",
       "description": "快速搜索公交站点",
-      "url": "/dubai-bus-buddy/?action=search",
+      "url": "/?action=search",
       "icons": [
         {
-          "src": "/dubai-bus-buddy/icon-placeholder.svg",
+          "src": "/icon-placeholder.svg",
           "sizes": "96x96"
         }
       ]
@@ -50,10 +50,10 @@
       "name": "收藏站点",
       "short_name": "收藏",
       "description": "查看收藏的公交站点",
-      "url": "/dubai-bus-buddy/?action=favorites",
+      "url": "/?action=favorites",
       "icons": [
         {
-          "src": "/dubai-bus-buddy/icon-placeholder.svg",
+          "src": "/icon-placeholder.svg",
           "sizes": "96x96"
         }
       ]

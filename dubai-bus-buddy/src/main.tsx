@@ -1,14 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import App from './App'
 import './index.css'
-import FavoritesPage from './pages/Favorites'
-import StopPage from './pages/Stop'
-
-const router = createBrowserRouter([
-  { path: '/', element: <FavoritesPage /> },
-  { path: '/stop/:id', element: <StopPage /> },
-])
 
 // Register service worker (simple)
 if ('serviceWorker' in navigator) {
@@ -19,6 +12,6 @@ if ('serviceWorker' in navigator) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <App />
   </React.StrictMode>,
 )

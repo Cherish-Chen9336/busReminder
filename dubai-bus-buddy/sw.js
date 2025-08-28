@@ -1,11 +1,11 @@
 const CACHE_NAME = 'dubai-bus-buddy-v1';
-const BASE_PATH = '/dubai-bus-buddy';
 const urlsToCache = [
-  `${BASE_PATH}/`,
-  `${BASE_PATH}/index.html`,
-  `${BASE_PATH}/manifest.json`,
-  `${BASE_PATH}/assets/index-B2AojwPR.js`,
-  `${BASE_PATH}/assets/index-BT-Ptn8g.css`
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/src/main.tsx',
+  '/src/App.tsx',
+  '/src/App.css'
 ];
 
 // 安装Service Worker
@@ -56,8 +56,8 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : '新的公交信息更新',
-    icon: `${BASE_PATH}/icon-placeholder.svg`,
-    badge: `${BASE_PATH}/icon-placeholder.svg`,
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -67,12 +67,12 @@ self.addEventListener('push', (event) => {
       {
         action: 'explore',
         title: '查看详情',
-        icon: `${BASE_PATH}/icon-placeholder.svg`
+        icon: '/icon-192x192.png'
       },
       {
         action: 'close',
         title: '关闭',
-        icon: `${BASE_PATH}/icon-placeholder.svg`
+        icon: '/icon-192x192.png'
       }
     ]
   };
@@ -88,7 +88,7 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow(`${BASE_PATH}/`)
+      clients.openWindow('/')
     );
   }
 });
