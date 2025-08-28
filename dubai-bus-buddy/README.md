@@ -1,69 +1,153 @@
-# React + TypeScript + Vite
+# 🚌 迪拜公交助手
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一个现代化的实时公交信息提醒应用，支持PWA功能，帮助您及时了解公交到达时间。
 
-Currently, two official plugins are available:
+## ✨ 主要功能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🚏 公交站点管理
+- 搜索并收藏常用公交站点
+- 实时显示公交到达时间
+- 支持站点代码和名称搜索
 
-## Expanding the ESLint configuration
+### 🔔 智能提醒系统
+- 公交即将到达时自动提醒
+- 到达时间变化通知
+- 可自定义提醒时间（1-15分钟）
+- 支持推送通知和本地通知
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📱 PWA支持
+- 可添加到手机主屏幕
+- 离线缓存功能
+- 原生应用体验
+- 自动更新
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🎨 用户友好界面
+- 响应式设计，支持各种设备
+- 深色模式支持
+- 现代化UI设计
+- 流畅的动画效果
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## 🚀 快速开始
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 安装依赖
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 开发模式
+```bash
+npm run dev
 ```
+
+### 构建生产版本
+```bash
+npm run build
+```
+
+### 预览构建结果
+```bash
+npm run preview
+```
+
+## 📱 PWA安装指南
+
+### Android Chrome
+1. 打开应用
+2. 点击地址栏右侧的"安装"按钮
+3. 选择"添加到主屏幕"
+
+### iOS Safari
+1. 打开应用
+2. 点击分享按钮
+3. 选择"添加到主屏幕"
+
+### 桌面浏览器
+1. 打开应用
+2. 点击地址栏右侧的"安装"按钮
+3. 选择"安装"
+
+## ⚙️ 设置说明
+
+### 通知设置
+- **启用通知**: 开启/关闭推送通知
+- **提醒时间**: 设置提前多少分钟提醒（1-15分钟）
+- **测试通知**: 测试通知功能是否正常
+
+### 应用设置
+- **自动刷新**: 自动更新公交信息（每30秒）
+- **深色模式**: 切换深色/浅色主题
+
+## 🔧 技术架构
+
+- **前端框架**: React 19 + TypeScript
+- **构建工具**: Vite
+- **样式框架**: Tailwind CSS
+- **状态管理**: Zustand
+- **PWA支持**: Service Worker + Manifest
+- **通知系统**: Web Notifications API
+
+## 📁 项目结构
+
+```
+dubai-bus-buddy/
+├── public/
+│   ├── manifest.json      # PWA配置
+│   ├── sw.js             # Service Worker
+│   └── icon-*.png        # 应用图标
+├── src/
+│   ├── components/       # React组件
+│   ├── lib/             # 工具库
+│   ├── App.tsx          # 主应用组件
+│   └── main.tsx         # 应用入口
+└── package.json
+```
+
+## 🌟 特色功能
+
+### 实时数据更新
+- 每30秒自动刷新公交信息
+- 智能检测时间变化
+- 及时发送更新通知
+
+### 智能提醒
+- 根据用户设置自动提醒
+- 避免重复通知
+- 支持多种通知类型
+
+### 离线支持
+- Service Worker缓存关键资源
+- 离线时仍可查看基本信息
+- 网络恢复后自动同步
+
+## 🔮 未来计划
+
+- [ ] 集成真实公交API
+- [ ] 添加路线规划功能
+- [ ] 支持多语言
+- [ ] 添加用户账户系统
+- [ ] 支持更多城市
+
+## 🤝 贡献指南
+
+欢迎提交Issue和Pull Request！
+
+1. Fork项目
+2. 创建功能分支
+3. 提交更改
+4. 推送到分支
+5. 创建Pull Request
+
+## 📄 许可证
+
+MIT License
+
+## 📞 联系我们
+
+如有问题或建议，请通过以下方式联系：
+
+- 提交GitHub Issue
+- 发送邮件至项目维护者
+
+---
+
+**享受便捷的公交出行体验！** 🚌✨
