@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "NODE_ENV=production npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:prod": "npm run build:prod && npm run preview",
     "generate-icons": "node scripts/generate-icons.js",
     "pwa-build": "npm run generate-icons && npm run build"
   },
