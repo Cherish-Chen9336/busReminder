@@ -1,5 +1,5 @@
-const CACHE_NAME = 'dubai-bus-buddy-v1';
-const BASE_PATH = '/dubai-bus-buddy';
+const CACHE_NAME = 'busReminder-v1';
+const BASE_PATH = '/busReminder';
 const urlsToCache = [
   `${BASE_PATH}/`,
   `${BASE_PATH}/index.html`,
