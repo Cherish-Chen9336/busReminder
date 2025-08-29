@@ -1,0 +1,5 @@
+[33mb2160c4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Convert project to English and prepare for GitHub build
+[33mb4e0904[m Fix build configuration and clean up duplicate files for GitHub Pages deployment
+[33ma910976[m Fix GitHub Pages deployment configuration - update Vite config, GitHub Actions, and PWA files
+[33m0cae806[m Fix GitHub Actions workflow
+[33m8d73253[m Fix build errors and deploy to GitHub Pages

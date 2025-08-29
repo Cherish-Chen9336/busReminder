@@ -1,4 +1,4 @@
-/* 全局样式 */
+/* Global styles */
 * {
   box-sizing: border-box;
 }
@@ -10,29 +10,32 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d1b0e 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* 金色主题变量 */
+/* Purple and Blue theme variables */
 :root {
-  --gold-primary: #ffd700;
-  --gold-secondary: #ffed4e;
-  --gold-accent: #ffb347;
-  --gold-dark: #b8860b;
-  --gold-light: #fff8dc;
-  --dark-bg: #1a1a1a;
-  --dark-card: #2d1b0e;
-  --dark-surface: #3d2b1e;
+  --primary-blue: #667eea;
+  --primary-purple: #764ba2;
+  --accent-blue: #4facfe;
+  --accent-purple: #a855f7;
+  --light-blue: #93c5fd;
+  --light-purple: #c4b5fd;
+  --dark-blue: #1e40af;
+  --dark-purple: #7c3aed;
+  --dark-bg: #1e1b4b;
+  --dark-card: #312e81;
+  --dark-surface: #4338ca;
   --text-primary: #ffffff;
-  --text-secondary: #e0e0e0;
-  --text-muted: #b0b0b0;
+  --text-secondary: #e0e7ff;
+  --text-muted: #c7d2fe;
   --success: #4ade80;
   --warning: #fbbf24;
   --danger: #f87171;
   --info: #60a5fa;
 }
 
-/* 自定义滚动条 */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -43,15 +46,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--gold-primary);
+  background: var(--primary-blue);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--gold-secondary);
+  background: var(--accent-blue);
 }
 
-/* 动画效果 */
+/* Animation effects */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -90,7 +93,7 @@ body {
   }
 }
 
-/* 组件动画 */
+/* Component animations */
 .fade-in {
   animation: fadeIn 0.3s ease-out;
 }
@@ -104,72 +107,92 @@ body {
 }
 
 .shimmer {
-  background: linear-gradient(90deg, var(--dark-surface) 25%, var(--gold-primary) 50%, var(--dark-surface) 75%);
+  background: linear-gradient(90deg, var(--dark-surface) 25%, var(--primary-blue) 50%, var(--dark-surface) 75%);
   background-size: 200px 100%;
   animation: shimmer 1.5s infinite;
 }
 
-/* 金色主题样式 */
-.gold-gradient {
-  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 50%, var(--gold-accent) 100%);
+/* Purple and Blue theme styles */
+.blue-gradient {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 50%, var(--primary-purple) 100%);
 }
 
-.gold-border {
-  border: 2px solid var(--gold-primary);
+.purple-gradient {
+  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--accent-purple) 50%, var(--primary-blue) 100%);
 }
 
-.gold-shadow {
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+.blue-border {
+  border: 2px solid var(--primary-blue);
 }
 
-.gold-text {
-  color: var(--gold-primary);
+.purple-border {
+  border: 2px solid var(--primary-purple);
 }
 
-.gold-bg {
-  background: var(--gold-primary);
+.blue-shadow {
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
 }
 
-/* 卡片样式 */
+.purple-shadow {
+  box-shadow: 0 4px 20px rgba(118, 75, 162, 0.3);
+}
+
+.blue-text {
+  color: var(--primary-blue);
+}
+
+.purple-text {
+  color: var(--primary-purple);
+}
+
+.blue-bg {
+  background: var(--primary-blue);
+}
+
+.purple-bg {
+  background: var(--primary-purple);
+}
+
+/* Card styles */
 .card {
   background: var(--dark-card);
   border-radius: 16px;
-  border: 1px solid var(--gold-primary);
+  border: 1px solid var(--primary-blue);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
 }
 
 .card-header {
-  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
-  color: var(--dark-bg);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-purple) 100%);
+  color: var(--text-primary);
   padding: 16px 20px;
   border-radius: 16px 16px 0 0;
   font-weight: bold;
   font-size: 18px;
 }
 
-/* 按钮样式 */
+/* Button styles */
 .btn-primary {
-  background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
-  color: var(--dark-bg);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
+  color: var(--text-primary);
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .btn-secondary {
   background: var(--dark-surface);
-  color: var(--gold-primary);
-  border: 2px solid var(--gold-primary);
+  color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: bold;
@@ -178,11 +201,28 @@ body {
 }
 
 .btn-secondary:hover {
-  background: var(--gold-primary);
-  color: var(--dark-bg);
+  background: var(--primary-blue);
+  color: var(--text-primary);
 }
 
-/* 状态指示器 */
+.btn-purple {
+  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--accent-purple) 100%);
+  color: var(--text-primary);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+}
+
+.btn-purple:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+}
+
+/* Status indicators */
 .status-live {
   background: var(--success);
   color: white;
@@ -200,16 +240,16 @@ body {
   animation: pulse 2s infinite;
 }
 
-/* 时间显示 */
+/* ETA display */
 .eta-display {
   font-size: 24px;
   font-weight: bold;
-  color: var(--gold-primary);
+  color: var(--primary-blue);
   text-align: center;
   padding: 8px;
   background: var(--dark-surface);
   border-radius: 8px;
-  border: 2px solid var(--gold-primary);
+  border: 2px solid var(--primary-blue);
 }
 
 .eta-urgent {
@@ -225,10 +265,10 @@ body {
   color: var(--success);
 }
 
-/* 路线标识 */
+/* Route badge */
 .route-badge {
-  background: var(--gold-primary);
-  color: var(--dark-bg);
+  background: var(--primary-blue);
+  color: var(--text-primary);
   padding: 8px 12px;
   border-radius: 8px;
   font-weight: bold;
@@ -237,10 +277,10 @@ body {
   text-align: center;
 }
 
-/* 搜索框 */
+/* Search input */
 .search-input {
   background: var(--dark-surface);
-  border: 2px solid var(--gold-primary);
+  border: 2px solid var(--primary-blue);
   color: var(--text-primary);
   padding: 16px 20px;
   border-radius: 12px;
@@ -251,15 +291,15 @@ body {
 
 .search-input:focus {
   outline: none;
-  border-color: var(--gold-secondary);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
 }
 
 .search-input::placeholder {
   color: var(--text-muted);
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .card {
     margin: 8px;
@@ -281,7 +321,7 @@ body {
   }
 }
 
-/* 深色模式支持 */
+/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   :root {
     --dark-bg: #000000;
@@ -290,10 +330,10 @@ body {
   }
 }
 
-/* 加载动画 */
+/* Loading spinner */
 .loading-spinner {
   border: 3px solid var(--dark-surface);
-  border-top: 3px solid var(--gold-primary);
+  border-top: 3px solid var(--primary-blue);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -305,24 +345,24 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-/* 通知样式 */
+/* Notification styles */
 .notification {
   position: fixed;
   top: 20px;
   right: 20px;
-  background: var(--gold-primary);
-  color: var(--dark-bg);
+  background: var(--primary-blue);
+  color: var(--text-primary);
   padding: 16px 20px;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
   z-index: 1000;
   animation: slideIn 0.3s ease-out;
 }
 
-/* 站点信息卡片 */
+/* Stop info card */
 .stop-info {
   background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark-surface) 100%);
-  border: 2px solid var(--gold-primary);
+  border: 2px solid var(--primary-blue);
   border-radius: 16px;
   padding: 20px;
   margin: 16px 0;
@@ -337,10 +377,10 @@ body {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--gold-primary), var(--gold-secondary), var(--gold-accent));
+  background: linear-gradient(90deg, var(--primary-blue), var(--accent-blue), var(--primary-purple));
 }
 
-/* 公交信息网格 */
+/* Bus grid */
 .bus-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -350,7 +390,7 @@ body {
 
 .bus-card {
   background: var(--dark-surface);
-  border: 1px solid var(--gold-primary);
+  border: 1px solid var(--primary-blue);
   border-radius: 12px;
   padding: 16px;
   transition: all 0.3s ease;
@@ -358,10 +398,10 @@ body {
 
 .bus-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
 }
 
-/* 实时更新指示器 */
+/* Realtime indicator */
 .realtime-indicator {
   display: inline-flex;
   align-items: center;

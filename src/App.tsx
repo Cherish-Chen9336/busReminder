@@ -166,7 +166,7 @@ function App() {
           </div>
           <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1 style={{ color: 'var(--gold-primary)', margin: 0, fontSize: '24px' }}>
+              <h1 style={{ color: 'var(--primary-blue)', margin: 0, fontSize: '24px' }}>
                 Real-time Bus Information
               </h1>
               <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
@@ -192,9 +192,9 @@ function App() {
             <div style={{ padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                  <h3 style={{ color: 'var(--gold-primary)', margin: 0, fontSize: '20px' }}>
-                    {closestStop.name}
-                  </h3>
+                                      <h3 style={{ color: 'var(--primary-blue)', margin: 0, fontSize: '20px' }}>
+                      {closestStop.name}
+                    </h3>
                   <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
                     Code: {closestStop.code} • Distance: {closestStop.distance}km
                   </p>
@@ -253,19 +253,41 @@ function App() {
           </div>
         )}
 
-        {/* Search Section */}
+        {/* Search Section - Updated to match image */}
         <div className="card" style={{ margin: '20px' }}>
           <div className="card-header">
             🔍 Search Bus Stops
           </div>
           <div style={{ padding: '20px' }}>
-            <input
-              type="text"
-              placeholder="Enter stop name or code..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="search-input"
-            />
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Search for bus station name or area..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="search-input"
+                style={{ flex: 1 }}
+              />
+              <button
+                onClick={() => handleSearch(searchQuery)}
+                className="btn-primary"
+                style={{ minWidth: 'auto', padding: '12px 20px' }}
+              >
+                🔍 Search
+              </button>
+              <button
+                onClick={() => {
+                  // Handle "Near Me" functionality
+                  if (closestStop) {
+                    handleSearch(closestStop.name);
+                  }
+                }}
+                className="btn-purple"
+                style={{ minWidth: 'auto', padding: '12px 20px' }}
+              >
+                📍 Near Me
+              </button>
+            </div>
             
             {isSearching && (
               <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -280,7 +302,7 @@ function App() {
                   <div key={stop.id} className="stop-info">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <h4 style={{ color: 'var(--gold-primary)', margin: '0 0 8px 0' }}>
+                        <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 8px 0' }}>
                           {stop.name}
                         </h4>
                         <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
@@ -314,7 +336,7 @@ function App() {
                   <div key={stop.id} className="stop-info">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                       <div>
-                        <h4 style={{ color: 'var(--gold-primary)', margin: '0 0 8px 0' }}>
+                        <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 8px 0' }}>
                           {stop.name}
                         </h4>
                         <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
@@ -373,7 +395,7 @@ function App() {
         {favorites.length === 0 && searchResults.length === 0 && !searchQuery && (
           <div className="card" style={{ margin: '20px', textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ fontSize: '64px', marginBottom: '20px' }}>🚌</div>
-            <h3 style={{ color: 'var(--gold-primary)', margin: '0 0 16px 0', fontSize: '24px' }}>
+            <h3 style={{ color: 'var(--primary-blue)', margin: '0 0 16px 0', fontSize: '24px' }}>
               Welcome to Dubai Bus Buddy
             </h3>
             <p style={{ color: 'var(--text-secondary)', margin: '0 0 24px 0', fontSize: '16px' }}>
