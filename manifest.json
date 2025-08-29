@@ -1,0 +1,62 @@
+{
+  "name": "Dubai Bus Buddy",
+  "short_name": "Bus Buddy",
+  "description": "Real-time bus information reminder app, helping you stay updated on bus arrival times",
+  "start_url": "/busReminder/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/busReminder/",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/busReminder/icon-placeholder.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["travel", "utilities", "productivity"],
+  "screenshots": [
+    {
+      "src": "/busReminder/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/busReminder/screenshot-narrow.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Stops",
+      "short_name": "Search",
+      "description": "Quickly search for bus stops",
+      "url": "/busReminder/?action=search",
+      "icons": [
+        {
+          "src": "/busReminder/icon-placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Favorite Stops",
+      "short_name": "Favorites",
+      "description": "View your favorite bus stops",
+      "url": "/busReminder/?action=favorites",
+      "icons": [
+        {
+          "src": "/busReminder/icon-placeholder.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
