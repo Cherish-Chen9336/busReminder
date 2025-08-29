@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icon-placeholder.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>迪拜公交助手 - 实时公交信息</title>
+    <title>Dubai Bus Buddy - Real-time Transit Information</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="description" content="实时公交信息提醒应用，帮助您及时了解公交到达时间" />
+    <meta name="description" content="Real-time bus information reminder app, helping you stay updated on bus arrival times" />
     <meta name="theme-color" content="#2563eb" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="公交助手" />
+    <meta name="apple-mobile-web-app-title" content="Bus Buddy" />
     
     <!-- Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -27,7 +27,7 @@
     <!-- PWA Meta Tags for iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="公交助手" />
+    <meta name="apple-mobile-web-app-title" content="Bus Buddy" />
     
     <!-- PWA Meta Tags for Windows -->
     <meta name="msapplication-TileColor" content="#2563eb" />
@@ -35,75 +35,10 @@
     
     <!-- PWA Meta Tags for Android -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="application-name" content="公交助手" />
-    <script type="module" crossorigin src="/assets/index-B2AojwPR.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BT-Ptn8g.css">
+    <meta name="application-name" content="Bus Buddy" />
   </head>
   <body>
     <div id="root"></div>
-    
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered: ', registration);
-              
-              // 检查更新
-              registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // 有新版本可用
-                    if (confirm('发现新版本，是否立即更新？')) {
-                      newWorker.postMessage({ type: 'SKIP_WAITING' });
-                    }
-                  }
-                });
-              });
-            })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
-            });
-        });
-      }
-      
-      // PWA安装提示
-      let deferredPrompt;
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // 显示安装提示
-        const installButton = document.createElement('div');
-        installButton.innerHTML = `
-          <div style="position: fixed; top: 20px; right: 20px; background: #2563eb; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; cursor: pointer;">
-            📱 添加到主屏幕
-          </div>
-        `;
-        
-        installButton.addEventListener('click', () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-              if (choiceResult.outcome === 'accepted') {
-                console.log('用户接受了安装提示');
-              }
-              deferredPrompt = null;
-            });
-          }
-        });
-        
-        document.body.appendChild(installButton);
-        
-        // 5秒后自动隐藏
-        setTimeout(() => {
-          if (installButton.parentNode) {
-            installButton.parentNode.removeChild(installButton);
-          }
-        }, 5000);
-      });
-    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

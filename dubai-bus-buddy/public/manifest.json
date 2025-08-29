@@ -1,18 +1,18 @@
 {
-  "name": "迪拜公交助手",
-  "short_name": "公交助手",
-  "description": "实时公交信息提醒应用，帮助您及时了解公交到达时间",
-  "start_url": "/dubai-bus-buddy/",
+  "name": "Dubai Bus Buddy",
+  "short_name": "Bus Buddy",
+  "description": "Real-time bus information reminder app, helping you stay updated on bus arrival times",
+  "start_url": "/busReminder/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "orientation": "portrait-primary",
-  "scope": "/dubai-bus-buddy/",
-  "lang": "zh-CN",
+  "scope": "/busReminder/",
+  "lang": "en",
   "dir": "ltr",
   "icons": [
     {
-      "src": "/dubai-bus-buddy/icon-placeholder.svg",
+      "src": "/busReminder/icon-placeholder.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -21,13 +21,13 @@
   "categories": ["travel", "utilities", "productivity"],
   "screenshots": [
     {
-      "src": "/dubai-bus-buddy/screenshot-wide.png",
+      "src": "/busReminder/screenshot-wide.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "/dubai-bus-buddy/screenshot-narrow.png",
+      "src": "/busReminder/screenshot-narrow.png",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow"
@@ -35,25 +35,25 @@
   ],
   "shortcuts": [
     {
-      "name": "搜索站点",
-      "short_name": "搜索",
-      "description": "快速搜索公交站点",
-      "url": "/dubai-bus-buddy/?action=search",
+      "name": "Search Stops",
+      "short_name": "Search",
+      "description": "Quickly search for bus stops",
+      "url": "/busReminder/?action=search",
       "icons": [
         {
-          "src": "/dubai-bus-buddy/icon-placeholder.svg",
+          "src": "/busReminder/icon-placeholder.svg",
           "sizes": "96x96"
         }
       ]
     },
     {
-      "name": "收藏站点",
-      "short_name": "收藏",
-      "description": "查看收藏的公交站点",
-      "url": "/dubai-bus-buddy/?action=favorites",
+      "name": "Favorite Stops",
+      "short_name": "Favorites",
+      "description": "View your favorite bus stops",
+      "url": "/busReminder/?action=favorites",
       "icons": [
         {
-          "src": "/dubai-bus-buddy/icon-placeholder.svg",
+          "src": "/busReminder/icon-placeholder.svg",
           "sizes": "96x96"
         }
       ]

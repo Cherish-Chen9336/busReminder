@@ -13,7 +13,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    // 从localStorage加载设置
+    // Load settings from localStorage
     const savedSettings = localStorage.getItem('bus-buddy-settings');
     if (savedSettings) {
       try {
@@ -23,11 +23,11 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
         setAutoRefresh(settings.autoRefresh ?? true);
         setDarkMode(settings.darkMode ?? false);
       } catch (error) {
-        console.error('加载设置失败:', error);
+        console.error('Failed to load settings:', error);
       }
     }
 
-    // 检查通知权限
+    // Check notification permission
     if (notificationService.isSupported()) {
       setNotificationEnabled(notificationService.getPermissionStatus() === 'granted');
     }
@@ -80,7 +80,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">设置</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -91,14 +91,14 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
             </button>
           </div>
 
-          {/* 通知设置 */}
+          {/* Notification Settings */}
           <div className="space-y-4">
             <div className="border-b pb-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">通知设置</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Notification Settings</h3>
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700">启用通知</span>
+                  <span className="text-gray-700">Enable Notifications</span>
                   <button
                     onClick={handleNotificationToggle}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -117,7 +117,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        提前提醒时间: {reminderMinutes} 分钟
+                        Remind {reminderMinutes} minutes in advance
                       </label>
                       <input
                         type="range"
@@ -133,20 +133,20 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       onClick={testNotification}
                       className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      测试通知
+                      Test Notification
                     </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* 应用设置 */}
+            {/* App Settings */}
             <div className="border-b pb-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">应用设置</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">App Settings</h3>
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700">自动刷新</span>
+                  <span className="text-gray-700">Auto Refresh</span>
                   <button
                     onClick={handleAutoRefreshToggle}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -162,7 +162,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700">深色模式</span>
+                  <span className="text-gray-700">Dark Mode</span>
                   <button
                     onClick={handleDarkModeToggle}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -179,14 +179,14 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               </div>
             </div>
 
-            {/* 关于 */}
+            {/* About */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">关于</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">About</h3>
               <div className="text-sm text-gray-600 space-y-2">
-                <p>版本: 1.0.0</p>
-                <p>迪拜公交助手帮助您及时了解公交到达信息</p>
+                <p>Version: 1.0.0</p>
+                <p>Dubai Bus Buddy helps you stay informed about bus arrival times</p>
                 <p className="text-xs text-gray-500">
-                  支持PWA，可添加到主屏幕
+                  Supports PWA, can be added to home screen
                 </p>
               </div>
             </div>
@@ -197,7 +197,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               onClick={onClose}
               className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              关闭
+              Close
             </button>
           </div>
         </div>
