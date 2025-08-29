@@ -8,7 +8,7 @@ const urlsToCache = [
   `${BASE_PATH}/assets/index-BT-Ptn8g.css`
 ];
 
-// 安装Service Worker
+// Install Service Worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -19,25 +19,25 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 拦截网络请求
+// Intercept network requests
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // 如果缓存中有响应，返回缓存的响应
+        // If response is in cache, return cached response
         if (response) {
           return response;
         }
         
-        // 否则从网络获取
+        // Otherwise fetch from network
         return fetch(event.request).then(
           (response) => {
-            // 检查响应是否有效
+            // Check if response is valid
             if(!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
-            // 克隆响应
+            // Clone response
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)
@@ -52,10 +52,10 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// 推送通知
+// Push notifications
 self.addEventListener('push', (event) => {
   const options = {
-    body: event.data ? event.data.text() : '新的公交信息更新',
+    body: event.data ? event.data.text() : 'New bus information update',
     icon: `${BASE_PATH}/icon-placeholder.svg`,
     badge: `${BASE_PATH}/icon-placeholder.svg`,
     vibrate: [100, 50, 100],
@@ -66,23 +66,23 @@ self.addEventListener('push', (event) => {
     actions: [
       {
         action: 'explore',
-        title: '查看详情',
+        title: 'View Details',
         icon: `${BASE_PATH}/icon-placeholder.svg`
       },
       {
         action: 'close',
-        title: '关闭',
+        title: 'Close',
         icon: `${BASE_PATH}/icon-placeholder.svg`
       }
     ]
   };
 
   event.waitUntil(
-    self.registration.showNotification('公交提醒', options)
+    self.registration.showNotification('Bus Reminder', options)
   );
 });
 
-// 通知点击事件
+// Notification click event
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -93,7 +93,7 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-// 激活事件
+// Activate event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {

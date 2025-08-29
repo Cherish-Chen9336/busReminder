@@ -1,153 +1,153 @@
-# 🚌 迪拜公交助手
+# 🚌 Dubai Bus Buddy
 
-一个现代化的实时公交信息提醒应用，支持PWA功能，帮助您及时了解公交到达时间。
+A modern real-time bus information reminder application with PWA support, helping you stay informed about bus arrival times.
 
-## ✨ 主要功能
+## ✨ Main Features
 
-### 🚏 公交站点管理
-- 搜索并收藏常用公交站点
-- 实时显示公交到达时间
-- 支持站点代码和名称搜索
+### 🚏 Bus Stop Management
+- Search and favorite commonly used bus stops
+- Real-time display of bus arrival times
+- Support for stop code and name search
 
-### 🔔 智能提醒系统
-- 公交即将到达时自动提醒
-- 到达时间变化通知
-- 可自定义提醒时间（1-15分钟）
-- 支持推送通知和本地通知
+### 🔔 Smart Reminder System
+- Automatic alerts when buses are approaching
+- Arrival time change notifications
+- Customizable reminder time (1-15 minutes)
+- Support for push notifications and local notifications
 
-### 📱 PWA支持
-- 可添加到手机主屏幕
-- 离线缓存功能
-- 原生应用体验
-- 自动更新
+### 📱 PWA Support
+- Can be added to mobile home screen
+- Offline caching functionality
+- Native app experience
+- Auto-update
 
-### 🎨 用户友好界面
-- 响应式设计，支持各种设备
-- 深色模式支持
-- 现代化UI设计
-- 流畅的动画效果
+### 🎨 User-Friendly Interface
+- Responsive design supporting various devices
+- Dark mode support
+- Modern UI design
+- Smooth animations
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 安装依赖
+### Install Dependencies
 ```bash
 npm install
 ```
 
-### 开发模式
+### Development Mode
 ```bash
 npm run dev
 ```
 
-### 构建生产版本
+### Build Production Version
 ```bash
 npm run build
 ```
 
-### 预览构建结果
+### Preview Build Results
 ```bash
 npm run preview
 ```
 
-## 📱 PWA安装指南
+## 📱 PWA Installation Guide
 
 ### Android Chrome
-1. 打开应用
-2. 点击地址栏右侧的"安装"按钮
-3. 选择"添加到主屏幕"
+1. Open the app
+2. Click the "Install" button on the right side of the address bar
+3. Select "Add to Home Screen"
 
 ### iOS Safari
-1. 打开应用
-2. 点击分享按钮
-3. 选择"添加到主屏幕"
+1. Open the app
+2. Click the share button
+3. Select "Add to Home Screen"
 
-### 桌面浏览器
-1. 打开应用
-2. 点击地址栏右侧的"安装"按钮
-3. 选择"安装"
+### Desktop Browser
+1. Open the app
+2. Click the "Install" button on the right side of the address bar
+3. Select "Install"
 
-## ⚙️ 设置说明
+## ⚙️ Settings Guide
 
-### 通知设置
-- **启用通知**: 开启/关闭推送通知
-- **提醒时间**: 设置提前多少分钟提醒（1-15分钟）
-- **测试通知**: 测试通知功能是否正常
+### Notification Settings
+- **Enable Notifications**: Turn on/off push notifications
+- **Reminder Time**: Set how many minutes in advance to remind (1-15 minutes)
+- **Test Notifications**: Test if notification functionality is working properly
 
-### 应用设置
-- **自动刷新**: 自动更新公交信息（每30秒）
-- **深色模式**: 切换深色/浅色主题
+### App Settings
+- **Auto Refresh**: Automatically update bus information (every 30 seconds)
+- **Dark Mode**: Switch between dark/light themes
 
-## 🔧 技术架构
+## 🔧 Technical Architecture
 
-- **前端框架**: React 19 + TypeScript
-- **构建工具**: Vite
-- **样式框架**: Tailwind CSS
-- **状态管理**: Zustand
-- **PWA支持**: Service Worker + Manifest
-- **通知系统**: Web Notifications API
+- **Frontend Framework**: React 19 + TypeScript
+- **Build Tool**: Vite
+- **Styling Framework**: Tailwind CSS
+- **State Management**: Zustand
+- **PWA Support**: Service Worker + Manifest
+- **Notification System**: Web Notifications API
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 dubai-bus-buddy/
 ├── public/
-│   ├── manifest.json      # PWA配置
+│   ├── manifest.json      # PWA configuration
 │   ├── sw.js             # Service Worker
-│   └── icon-*.png        # 应用图标
+│   └── icon-*.png        # App icons
 ├── src/
-│   ├── components/       # React组件
-│   ├── lib/             # 工具库
-│   ├── App.tsx          # 主应用组件
-│   └── main.tsx         # 应用入口
+│   ├── components/       # React components
+│   ├── lib/             # Utility libraries
+│   ├── App.tsx          # Main app component
+│   └── main.tsx         # App entry point
 └── package.json
 ```
 
-## 🌟 特色功能
+## 🌟 Special Features
 
-### 实时数据更新
-- 每30秒自动刷新公交信息
-- 智能检测时间变化
-- 及时发送更新通知
+### Real-time Data Updates
+- Auto-refresh bus information every 30 seconds
+- Smart detection of time changes
+- Timely update notifications
 
-### 智能提醒
-- 根据用户设置自动提醒
-- 避免重复通知
-- 支持多种通知类型
+### Smart Reminders
+- Automatic reminders based on user settings
+- Avoid duplicate notifications
+- Support for multiple notification types
 
-### 离线支持
-- Service Worker缓存关键资源
-- 离线时仍可查看基本信息
-- 网络恢复后自动同步
+### Offline Support
+- Service Worker caching of critical resources
+- View basic information even when offline
+- Auto-sync when network is restored
 
-## 🔮 未来计划
+## 🔮 Future Plans
 
-- [ ] 集成真实公交API
-- [ ] 添加路线规划功能
-- [ ] 支持多语言
-- [ ] 添加用户账户系统
-- [ ] 支持更多城市
+- [ ] Integrate real bus API
+- [ ] Add route planning functionality
+- [ ] Support multiple languages
+- [ ] Add user account system
+- [ ] Support more cities
 
-## 🤝 贡献指南
+## 🤝 Contributing Guide
 
-欢迎提交Issue和Pull Request！
+Welcome to submit Issues and Pull Requests!
 
-1. Fork项目
-2. 创建功能分支
-3. 提交更改
-4. 推送到分支
-5. 创建Pull Request
+1. Fork the project
+2. Create a feature branch
+3. Submit changes
+4. Push to the branch
+5. Create a Pull Request
 
-## 📄 许可证
+## 📄 License
 
 MIT License
 
-## 📞 联系我们
+## 📞 Contact Us
 
-如有问题或建议，请通过以下方式联系：
+If you have questions or suggestions, please contact us through:
 
-- 提交GitHub Issue
-- 发送邮件至项目维护者
+- Submit GitHub Issue
+- Send email to project maintainer
 
 ---
 
-**享受便捷的公交出行体验！** 🚌✨
+**Enjoy convenient bus travel experience!** 🚌✨

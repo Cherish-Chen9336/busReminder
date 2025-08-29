@@ -1,3 +1,5 @@
+
+
 export class NotificationService {
   private static instance: NotificationService;
   private permission: NotificationPermission = 'default';
@@ -9,6 +11,8 @@ export class NotificationService {
   public static getInstance(): NotificationService {
     if (!NotificationService.instance) {
       NotificationService.instance = new NotificationService();
+
+      
     }
     return NotificationService.instance;
   }
@@ -21,7 +25,7 @@ export class NotificationService {
 
   public async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
-      console.warn('此浏览器不支持通知功能');
+      console.warn('This browser does not support notifications');
       return false;
     }
 
@@ -30,7 +34,7 @@ export class NotificationService {
     }
 
     if (this.permission === 'denied') {
-      console.warn('通知权限被拒绝');
+      console.warn('Notification permission denied');
       return false;
     }
 
@@ -39,7 +43,7 @@ export class NotificationService {
       this.permission = result;
       return result === 'granted';
     } catch (error) {
-      console.error('请求通知权限失败:', error);
+      console.error('Failed to request notification permission:', error);
       return false;
     }
   }
@@ -66,18 +70,18 @@ export class NotificationService {
     try {
       const notification = new Notification(title, defaultOptions);
       
-      // 自动关闭通知
+      // Auto-close notification
       setTimeout(() => {
         notification.close();
       }, 5000);
 
-      // 点击通知时关闭
+      // Close notification when clicked
       notification.onclick = () => {
         notification.close();
         window.focus();
       };
     } catch (error) {
-      console.error('显示通知失败:', error);
+      console.error('Failed to display notification:', error);
     }
   }
 
@@ -86,8 +90,8 @@ export class NotificationService {
     destination: string, 
     etaMinutes: number
   ): Promise<void> {
-    const title = `🚌 公交提醒`;
-    const body = `${route}路公交将在${etaMinutes}分钟后到达${destination}`;
+    const title = `🚌 Bus Reminder`;
+    const body = `Bus ${route} will arrive at ${destination} in ${etaMinutes} minutes`;
     
     await this.showNotification(title, {
       body,
@@ -101,8 +105,8 @@ export class NotificationService {
     newEtaMinutes: number,
     _oldEtaMinutes: number
   ): Promise<void> {
-    const title = `🔄 时间更新`;
-    const body = `${route}路公交到达${destination}的时间已更新为${newEtaMinutes}分钟`;
+    const title = `🔄 Time Update`;
+    const body = `Bus ${route} arrival time at ${destination} has been updated to ${newEtaMinutes} minutes`;
     
     await this.showNotification(title, {
       body,
@@ -115,8 +119,8 @@ export class NotificationService {
     route: string,
     message: string
   ): Promise<void> {
-    const title = `⚠️ 服务提醒`;
-    const body = `${route}路公交: ${message}`;
+    const title = `⚠️ Service Alert`;
+    const body = `Bus ${route}: ${message}`;
     
     await this.showNotification(title, {
       body,
@@ -134,5 +138,5 @@ export class NotificationService {
   }
 }
 
-// 导出单例实例
+// Export singleton instance
 export const notificationService = NotificationService.getInstance();

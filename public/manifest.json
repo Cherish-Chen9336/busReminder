@@ -1,14 +1,14 @@
 {
-  "name": "迪拜公交助手",
-  "short_name": "公交助手",
-  "description": "实时公交信息提醒应用，帮助您及时了解公交到达时间",
+  "name": "Dubai Bus Buddy",
+  "short_name": "Bus Buddy",
+  "description": "Real-time bus information reminder app, helping you stay updated on bus arrival times",
   "start_url": "/dubai-bus-buddy/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "orientation": "portrait-primary",
   "scope": "/dubai-bus-buddy/",
-  "lang": "zh-CN",
+  "lang": "en",
   "dir": "ltr",
   "icons": [
     {
@@ -35,9 +35,9 @@
   ],
   "shortcuts": [
     {
-      "name": "搜索站点",
-      "short_name": "搜索",
-      "description": "快速搜索公交站点",
+      "name": "Search Stops",
+      "short_name": "Search",
+      "description": "Quickly search for bus stops",
       "url": "/dubai-bus-buddy/?action=search",
       "icons": [
         {
@@ -47,9 +47,9 @@
       ]
     },
     {
-      "name": "收藏站点",
-      "short_name": "收藏",
-      "description": "查看收藏的公交站点",
+      "name": "Favorite Stops",
+      "short_name": "Favorites",
+      "description": "View your favorite bus stops",
       "url": "/dubai-bus-buddy/?action=favorites",
       "icons": [
         {
