@@ -143,7 +143,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--dark-bg)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--light-gray)' }}>
       {/* Live Status Bar */}
       <div className="status-live" style={{ 
         position: 'fixed', 
@@ -282,7 +282,7 @@ function App() {
                     handleSearch(closestStop.name);
                   }
                 }}
-                className="btn-purple"
+                className="btn-outline"
                 style={{ minWidth: 'auto', padding: '12px 20px' }}
               >
                 📍 Near Me
@@ -363,7 +363,7 @@ function App() {
                           justifyContent: 'space-between', 
                           alignItems: 'center',
                           padding: '8px 0',
-                          borderBottom: '1px solid var(--dark-surface)'
+                          borderBottom: '1px solid var(--border-light)'
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div className="route-badge" style={{ fontSize: '14px', padding: '6px 10px' }}>
@@ -435,7 +435,7 @@ function App() {
             </div>
             <div style={{ padding: '20px' }}>
               <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ color: 'var(--gold-primary)', margin: '0 0 16px 0' }}>About App</h3>
+                <h3 style={{ color: 'var(--primary-blue)', margin: '0 0 16px 0' }}>About App</h3>
                 <div style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
                   <p><strong>Version:</strong> 2.0.0</p>
                   <p><strong>Features:</strong></p>
@@ -450,7 +450,7 @@ function App() {
               </div>
               
               <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ color: 'var(--gold-primary)', margin: '0 0 16px 0' }}>PWA Installation</h3>
+                <h3 style={{ color: 'var(--primary-blue)', margin: '0 0 16px 0' }}>PWA Installation</h3>
                 <p style={{ color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
                   This app supports PWA installation. Look for the "Add to Home Screen" option in your browser.
                 </p>
