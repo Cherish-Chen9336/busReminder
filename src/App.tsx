@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import { getNearbyStops, getDepartures } from './lib/supabase'
 
 // Enhanced type definitions
 interface Stop {
@@ -8,6 +9,8 @@ interface Stop {
   code: string
   distance?: number
   isClosest?: boolean
+  lat?: number
+  lon?: number
 }
 
 interface Departure {
@@ -21,23 +24,7 @@ interface Departure {
   status?: 'ON_TIME' | 'DELAYED' | 'EARLY'
 }
 
-// Enhanced mock data
-const mockStops: Stop[] = [
-  { id: 'S1', name: 'Al Jafiliya Bus Station', code: 'AJS', distance: 0.2, isClosest: true },
-  { id: 'S2', name: 'Ibn Battuta Metro Bus Stop', code: 'IBM', distance: 1.5 },
-  { id: 'S3', name: 'Expo Metro Bus Stop', code: 'EXPO', distance: 3.2 },
-  { id: 'S4', name: 'Dubai Mall Bus Stop', code: 'DMB', distance: 2.1 },
-  { id: 'S5', name: 'Burj Khalifa Bus Stop', code: 'BKB', distance: 2.3 },
-]
-
-const mockDepartures: Departure[] = [
-  { route: 'F55', headsign: 'Ibn Battuta', etaMin: 4, scheduled: '14:30', realtime: true, direction: 'TO_ABU_DHABI', platform: 'A', status: 'ON_TIME' },
-  { route: 'F55', headsign: 'Expo Metro', etaMin: 18, scheduled: '14:41', direction: 'TO_DUBAI', platform: 'B', status: 'ON_TIME' },
-  { route: 'X28', headsign: 'Gold Souq', etaMin: 31, scheduled: '14:54', direction: 'TO_SHARJAH', platform: 'C', status: 'ON_TIME' },
-  { route: 'E11', headsign: 'Dubai Mall', etaMin: 7, scheduled: '14:33', realtime: true, direction: 'TO_DUBAI', platform: 'A', status: 'DELAYED' },
-  { route: 'E11', headsign: 'Burj Khalifa', etaMin: 22, scheduled: '14:48', direction: 'TO_ABU_DHABI', platform: 'B', status: 'ON_TIME' },
-  { route: 'F30', headsign: 'Al Ghubaiba', etaMin: 12, scheduled: '14:38', direction: 'TO_DUBAI', platform: 'C', status: 'ON_TIME' },
-]
+// Mock data removed - now using Supabase RPC calls
 
 // Local storage hook
 function useLocalStorage<T>(key: string, initialValue: T) {
@@ -72,19 +59,91 @@ function App() {
   const [isSearching, setIsSearching] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [lastUpdate, setLastUpdate] = useState(new Date())
-  const [closestStop] = useState<Stop | null>(mockStops.find(s => s.isClosest) || null)
+  const [closestStop, setClosestStop] = useState<Stop | null>(null)
+  const [nearbyStops, setNearbyStops] = useState<Stop[]>([])
+  const [departures, setDepartures] = useState<Departure[]>([])
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords
+          setUserLocation({ lat: latitude, lon: longitude })
+        },
+        (error) => {
+          console.error('Error getting location:', error)
+          setError('无法获取位置信息，请允许位置访问权限')
+        }
+      )
+    } else {
+      setError('浏览器不支持地理位置功能')
+    }
+  }, [])
+
+  // Load nearby stops when location is available
+  useEffect(() => {
+    if (userLocation) {
+      loadNearbyStops()
+    }
+  }, [userLocation])
+
+  // Load nearby stops from Supabase
+  const loadNearbyStops = async () => {
+    if (!userLocation) return
+    
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const stops = await getNearbyStops(userLocation.lat, userLocation.lon, 1000) as Stop[]
+      setNearbyStops(stops)
+      
+      // Set closest stop
+      if (stops.length > 0) {
+        const closest = stops.reduce((prev: Stop, current: Stop) => 
+          (prev.distance || 0) < (current.distance || 0) ? prev : current
+        )
+        setClosestStop(closest)
+        loadDepartures(closest.id)
+      }
+    } catch (err) {
+      console.error('Error loading nearby stops:', err)
+      setError('加载附近站点失败')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Load departures for a specific stop
+  const loadDepartures = async (stopId: string) => {
+    try {
+      const now = new Date().toISOString()
+      const deps = await getDepartures(stopId, now, 20) as Departure[]
+      setDepartures(deps)
+    } catch (err) {
+      console.error('Error loading departures:', err)
+      setError('加载班次信息失败')
+    }
+  }
 
   // Simulate real-time updates
   useEffect(() => {
     const interval = setInterval(() => {
       setLastUpdate(new Date())
+      if (closestStop) {
+        loadDepartures(closestStop.id)
+      }
     }, 30000) // Update every 30 seconds
 
     return () => clearInterval(interval)
-  }, [])
+  }, [closestStop])
 
   // Search functionality
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query)
     if (query.trim().length < 2) {
       setSearchResults([])
@@ -92,14 +151,20 @@ function App() {
     }
     setIsSearching(true)
     
-    setTimeout(() => {
-      const results = mockStops.filter(stop =>
+    try {
+      // For now, filter from nearby stops or use a broader search
+      // In a real implementation, you might want to add a search RPC function
+      const results = nearbyStops.filter(stop =>
         stop.name.toLowerCase().includes(query.toLowerCase()) ||
         stop.code.toLowerCase().includes(query.toLowerCase())
       )
       setSearchResults(results)
+    } catch (err) {
+      console.error('Search error:', err)
+      setError('搜索失败')
+    } finally {
       setIsSearching(false)
-    }, 300)
+    }
   }
 
   // Add to favorites
@@ -159,6 +224,31 @@ function App() {
 
       {/* Main Content */}
       <div style={{ paddingTop: '50px' }}>
+        {/* Error Display */}
+        {error && (
+          <div className="card" style={{ margin: '20px', marginTop: '10px', border: '2px solid var(--danger)', backgroundColor: '#fef2f2' }}>
+            <div style={{ padding: '16px', color: 'var(--danger)' }}>
+              <strong>⚠️ 错误：</strong> {error}
+              <button 
+                onClick={() => setError(null)}
+                style={{ marginLeft: '12px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading Display */}
+        {isLoading && (
+          <div className="card" style={{ margin: '20px', marginTop: '10px', textAlign: 'center' }}>
+            <div style={{ padding: '20px' }}>
+              <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
+              <p style={{ color: 'var(--text-secondary)', margin: 0 }}>正在加载附近站点...</p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="card" style={{ margin: '20px', marginTop: '10px' }}>
           <div className="card-header">
@@ -206,7 +296,7 @@ function App() {
 
               {/* All Bus Departures from Closest Stop */}
               <div className="bus-grid">
-                {mockDepartures.map((dep, index) => (
+                {departures.map((dep, index) => (
                   <div key={index} className="bus-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div className="route-badge">
@@ -278,8 +368,10 @@ function App() {
               <button
                 onClick={() => {
                   // Handle "Near Me" functionality
-                  if (closestStop) {
-                    handleSearch(closestStop.name);
+                  if (userLocation) {
+                    loadNearbyStops();
+                  } else {
+                    setError('请先允许位置访问权限');
                   }
                 }}
                 className="btn-outline"
@@ -343,13 +435,22 @@ function App() {
                           Code: {stop.code}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleRemoveFavorite(stop.id)}
-                        className="btn-secondary"
-                        style={{ minWidth: 'auto', padding: '8px 16px' }}
-                      >
-                        Remove
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => loadDepartures(stop.id)}
+                          className="btn-primary"
+                          style={{ minWidth: 'auto', padding: '8px 16px', fontSize: '12px' }}
+                        >
+                          View Times
+                        </button>
+                        <button
+                          onClick={() => handleRemoveFavorite(stop.id)}
+                          className="btn-secondary"
+                          style={{ minWidth: 'auto', padding: '8px 16px', fontSize: '12px' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                     
                     {/* Show departures for this stop */}
@@ -357,7 +458,7 @@ function App() {
                       <h5 style={{ color: 'var(--text-primary)', margin: '0 0 12px 0', fontSize: '16px' }}>
                         Upcoming Buses:
                       </h5>
-                      {mockDepartures.slice(0, 3).map((dep, index) => (
+                      {departures.slice(0, 3).map((dep, index) => (
                         <div key={index} style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between', 
