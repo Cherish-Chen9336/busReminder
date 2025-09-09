@@ -67,40 +67,49 @@ function App() {
   const [error, setError] = useState<string | null>(null)
 
   // Get user location
-  useEffect(() => {
+  const getCurrentLocation = () => {
     if (navigator.geolocation) {
       console.log('Requesting location permission...')
+      setError(null)
+      setIsLoading(true)
+      
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords
           console.log('Location obtained:', { lat: latitude, lon: longitude })
           setUserLocation({ lat: latitude, lon: longitude })
+          setIsLoading(false)
         },
         (error) => {
           console.error('Error getting location:', error)
-          let errorMessage = '无法获取位置信息'
+          let errorMessage = 'Unable to get location information'
           switch(error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage = '位置访问被拒绝，请在浏览器设置中允许位置访问'
+              errorMessage = 'Location access denied. Please allow location access in your browser settings'
               break
             case error.POSITION_UNAVAILABLE:
-              errorMessage = '位置信息不可用'
+              errorMessage = 'Location information is unavailable'
               break
             case error.TIMEOUT:
-              errorMessage = '获取位置超时'
+              errorMessage = 'Location request timed out'
               break
           }
           setError(errorMessage)
+          setIsLoading(false)
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 15000,
           maximumAge: 300000
         }
       )
     } else {
-      setError('浏览器不支持地理位置功能')
+      setError('Geolocation is not supported by this browser')
     }
+  }
+
+  useEffect(() => {
+    getCurrentLocation()
   }, [])
 
   // Load nearby stops when location is available
@@ -133,11 +142,11 @@ function App() {
         loadDepartures(closest.id)
       } else {
         console.log('No nearby stops found')
-        setError('附近没有找到公交站点')
+        setError('No bus stops found nearby')
       }
     } catch (err) {
       console.error('Error loading nearby stops:', err)
-      setError(`加载附近站点失败: ${err instanceof Error ? err.message : '未知错误'}`)
+      setError(`Failed to load nearby stops: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
@@ -154,7 +163,7 @@ function App() {
       setDepartures(deps)
     } catch (err) {
       console.error('Error loading departures:', err)
-      setError(`加载班次信息失败: ${err instanceof Error ? err.message : '未知错误'}`)
+      setError(`Failed to load departure times: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -208,16 +217,16 @@ function App() {
       // If still no results and no location, show a helpful message
       if (results.length === 0) {
         if (!userLocation) {
-          setError('请先允许位置访问权限，或点击"Near Me"按钮获取附近站点')
+          setError('Please allow location access first, or click "Near Me" button to get nearby stops')
         } else {
-          setError('未找到匹配的站点，请尝试其他关键词')
+          setError('No matching stops found, please try different keywords')
         }
       }
       
       setSearchResults(results)
     } catch (err) {
       console.error('Search error:', err)
-      setError('搜索失败')
+      setError('Search failed')
     } finally {
       setIsSearching(false)
     }
@@ -284,7 +293,7 @@ function App() {
         {error && (
           <div className="card" style={{ margin: '20px', marginTop: '10px', border: '2px solid var(--danger)', backgroundColor: '#fef2f2' }}>
             <div style={{ padding: '16px', color: 'var(--danger)' }}>
-              <strong>⚠️ 错误：</strong> {error}
+              <strong>⚠️ Error:</strong> {error}
               <button 
                 onClick={() => setError(null)}
                 style={{ marginLeft: '12px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}
@@ -300,7 +309,7 @@ function App() {
           <div className="card" style={{ margin: '20px', marginTop: '10px', textAlign: 'center' }}>
             <div style={{ padding: '20px' }}>
               <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
-              <p style={{ color: 'var(--text-secondary)', margin: 0 }}>正在加载附近站点...</p>
+              <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Loading nearby stops...</p>
             </div>
           </div>
         )}
@@ -309,12 +318,12 @@ function App() {
         {import.meta.env.DEV && (
           <div className="card" style={{ margin: '20px', marginTop: '10px', fontSize: '12px' }}>
             <div style={{ padding: '16px' }}>
-              <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 12px 0' }}>调试信息</h4>
-              <p><strong>用户位置:</strong> {userLocation ? `${userLocation.lat.toFixed(6)}, ${userLocation.lon.toFixed(6)}` : '未获取'}</p>
-              <p><strong>附近站点数量:</strong> {nearbyStops.length}</p>
-              <p><strong>最近站点:</strong> {closestStop ? closestStop.name : '无'}</p>
-              <p><strong>班次数量:</strong> {departures.length}</p>
-              <p><strong>加载状态:</strong> {isLoading ? '加载中' : '空闲'}</p>
+              <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 12px 0' }}>Debug Info</h4>
+              <p><strong>User Location:</strong> {userLocation ? `${userLocation.lat.toFixed(6)}, ${userLocation.lon.toFixed(6)}` : 'Not obtained'}</p>
+              <p><strong>Nearby Stops Count:</strong> {nearbyStops.length}</p>
+              <p><strong>Closest Stop:</strong> {closestStop ? closestStop.name : 'None'}</p>
+              <p><strong>Departures Count:</strong> {departures.length}</p>
+              <p><strong>Loading Status:</strong> {isLoading ? 'Loading' : 'Idle'}</p>
             </div>
           </div>
         )}
@@ -467,21 +476,7 @@ function App() {
                   if (userLocation) {
                     loadNearbyStops();
                   } else {
-                    setError('请先允许位置访问权限');
-                    // Try to get location again
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                          const { latitude, longitude } = position.coords
-                          console.log('Manual location obtained:', { lat: latitude, lon: longitude })
-                          setUserLocation({ lat: latitude, lon: longitude })
-                        },
-                        (error) => {
-                          console.error('Manual location error:', error)
-                          setError('无法获取位置信息，请检查浏览器设置')
-                        }
-                      )
-                    }
+                    getCurrentLocation();
                   }
                 }}
                 className="btn-outline"
@@ -494,14 +489,14 @@ function App() {
             {isSearching && (
               <div style={{ textAlign: 'center', padding: '20px' }}>
                 <div className="loading-spinner"></div>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>正在搜索站点...</p>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>Searching for stops...</p>
               </div>
             )}
             
             {!isSearching && searchQuery && searchResults.length === 0 && (
               <div style={{ textAlign: 'center', padding: '20px' }}>
                 <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                  {userLocation ? '未找到匹配的站点' : '请先获取位置信息以搜索附近站点'}
+                  {userLocation ? 'No matching stops found' : 'Please get location first to search nearby stops'}
                 </p>
               </div>
             )}
