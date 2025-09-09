@@ -4,7 +4,10 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // API call function for Supabase RPC
 async function callSupabaseRPC<T>(functionName: string, params: any = {}): Promise<T> {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
+  const url = `${SUPABASE_URL}/rest/v1/rpc/${functionName}`
+  console.log(`Calling Supabase RPC: ${functionName}`, params)
+  
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
@@ -15,11 +18,17 @@ async function callSupabaseRPC<T>(functionName: string, params: any = {}): Promi
     body: JSON.stringify(params)
   })
 
+  console.log(`Response status: ${response.status} ${response.statusText}`)
+
   if (!response.ok) {
-    throw new Error(`Supabase RPC call failed: ${response.status} ${response.statusText}`)
+    const errorText = await response.text()
+    console.error('Supabase error response:', errorText)
+    throw new Error(`Supabase RPC call failed: ${response.status} ${response.statusText} - ${errorText}`)
   }
 
-  return response.json()
+  const data = await response.json()
+  console.log(`RPC ${functionName} response:`, data)
+  return data
 }
 
 // RPC function calls

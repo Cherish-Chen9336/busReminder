@@ -69,14 +69,33 @@ function App() {
   // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
+      console.log('Requesting location permission...')
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords
+          console.log('Location obtained:', { lat: latitude, lon: longitude })
           setUserLocation({ lat: latitude, lon: longitude })
         },
         (error) => {
           console.error('Error getting location:', error)
-          setError('无法获取位置信息，请允许位置访问权限')
+          let errorMessage = '无法获取位置信息'
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = '位置访问被拒绝，请在浏览器设置中允许位置访问'
+              break
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = '位置信息不可用'
+              break
+            case error.TIMEOUT:
+              errorMessage = '获取位置超时'
+              break
+          }
+          setError(errorMessage)
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
         }
       )
     } else {
@@ -99,7 +118,9 @@ function App() {
     setError(null)
     
     try {
+      console.log('Loading nearby stops for location:', userLocation)
       const stops = await getNearbyStops(userLocation.lat, userLocation.lon, 1000) as Stop[]
+      console.log('Nearby stops received:', stops)
       setNearbyStops(stops)
       
       // Set closest stop
@@ -107,12 +128,16 @@ function App() {
         const closest = stops.reduce((prev: Stop, current: Stop) => 
           (prev.distance || 0) < (current.distance || 0) ? prev : current
         )
+        console.log('Closest stop:', closest)
         setClosestStop(closest)
         loadDepartures(closest.id)
+      } else {
+        console.log('No nearby stops found')
+        setError('附近没有找到公交站点')
       }
     } catch (err) {
       console.error('Error loading nearby stops:', err)
-      setError('加载附近站点失败')
+      setError(`加载附近站点失败: ${err instanceof Error ? err.message : '未知错误'}`)
     } finally {
       setIsLoading(false)
     }
@@ -121,12 +146,15 @@ function App() {
   // Load departures for a specific stop
   const loadDepartures = async (stopId: string) => {
     try {
+      console.log('Loading departures for stop:', stopId)
       const now = new Date().toISOString()
+      console.log('Request time:', now)
       const deps = await getDepartures(stopId, now, 20) as Departure[]
+      console.log('Departures received:', deps)
       setDepartures(deps)
     } catch (err) {
       console.error('Error loading departures:', err)
-      setError('加载班次信息失败')
+      setError(`加载班次信息失败: ${err instanceof Error ? err.message : '未知错误'}`)
     }
   }
 
@@ -152,12 +180,40 @@ function App() {
     setIsSearching(true)
     
     try {
-      // For now, filter from nearby stops or use a broader search
-      // In a real implementation, you might want to add a search RPC function
-      const results = nearbyStops.filter(stop =>
+      console.log('Searching for:', query)
+      
+      // First try to search in nearby stops
+      let results = nearbyStops.filter(stop =>
         stop.name.toLowerCase().includes(query.toLowerCase()) ||
         stop.code.toLowerCase().includes(query.toLowerCase())
       )
+      
+      console.log('Results from nearby stops:', results)
+      
+      // If no results from nearby stops and we have a location, try a broader search
+      if (results.length === 0 && userLocation) {
+        console.log('No nearby results, trying broader search...')
+        try {
+          const broaderResults = await getNearbyStops(userLocation.lat, userLocation.lon, 5000) as Stop[]
+          results = broaderResults.filter(stop =>
+            stop.name.toLowerCase().includes(query.toLowerCase()) ||
+            stop.code.toLowerCase().includes(query.toLowerCase())
+          )
+          console.log('Broader search results:', results)
+        } catch (err) {
+          console.error('Broader search failed:', err)
+        }
+      }
+      
+      // If still no results and no location, show a helpful message
+      if (results.length === 0) {
+        if (!userLocation) {
+          setError('请先允许位置访问权限，或点击"Near Me"按钮获取附近站点')
+        } else {
+          setError('未找到匹配的站点，请尝试其他关键词')
+        }
+      }
+      
       setSearchResults(results)
     } catch (err) {
       console.error('Search error:', err)
@@ -245,6 +301,20 @@ function App() {
             <div style={{ padding: '20px' }}>
               <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
               <p style={{ color: 'var(--text-secondary)', margin: 0 }}>正在加载附近站点...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Debug Info */}
+        {import.meta.env.DEV && (
+          <div className="card" style={{ margin: '20px', marginTop: '10px', fontSize: '12px' }}>
+            <div style={{ padding: '16px' }}>
+              <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 12px 0' }}>调试信息</h4>
+              <p><strong>用户位置:</strong> {userLocation ? `${userLocation.lat.toFixed(6)}, ${userLocation.lon.toFixed(6)}` : '未获取'}</p>
+              <p><strong>附近站点数量:</strong> {nearbyStops.length}</p>
+              <p><strong>最近站点:</strong> {closestStop ? closestStop.name : '无'}</p>
+              <p><strong>班次数量:</strong> {departures.length}</p>
+              <p><strong>加载状态:</strong> {isLoading ? '加载中' : '空闲'}</p>
             </div>
           </div>
         )}
@@ -350,18 +420,44 @@ function App() {
           </div>
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder="Search for bus station name or area..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="search-input"
-                style={{ flex: 1 }}
-              />
+              <div style={{ position: 'relative', flex: 1 }}>
+                <input
+                  type="text"
+                  placeholder="Search for bus station name or area..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="search-input"
+                  style={{ width: '100%', paddingRight: searchQuery ? '40px' : '16px' }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('')
+                      setSearchResults([])
+                      setError(null)
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: '8px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      padding: '4px'
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => handleSearch(searchQuery)}
                 className="btn-primary"
                 style={{ minWidth: 'auto', padding: '12px 20px' }}
+                disabled={searchQuery.trim().length < 2}
               >
                 🔍 Search
               </button>
@@ -372,6 +468,20 @@ function App() {
                     loadNearbyStops();
                   } else {
                     setError('请先允许位置访问权限');
+                    // Try to get location again
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                          const { latitude, longitude } = position.coords
+                          console.log('Manual location obtained:', { lat: latitude, lon: longitude })
+                          setUserLocation({ lat: latitude, lon: longitude })
+                        },
+                        (error) => {
+                          console.error('Manual location error:', error)
+                          setError('无法获取位置信息，请检查浏览器设置')
+                        }
+                      )
+                    }
                   }
                 }}
                 className="btn-outline"
@@ -384,7 +494,15 @@ function App() {
             {isSearching && (
               <div style={{ textAlign: 'center', padding: '20px' }}>
                 <div className="loading-spinner"></div>
-                <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>Searching...</p>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '10px' }}>正在搜索站点...</p>
+              </div>
+            )}
+            
+            {!isSearching && searchQuery && searchResults.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+                  {userLocation ? '未找到匹配的站点' : '请先获取位置信息以搜索附近站点'}
+                </p>
               </div>
             )}
             
@@ -401,13 +519,22 @@ function App() {
                           Code: {stop.code} • Distance: {stop.distance}km
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleAddFavorite(stop)}
-                        className="btn-primary"
-                        style={{ minWidth: 'auto' }}
-                      >
-                        Add to Favorites
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => loadDepartures(stop.id)}
+                          className="btn-outline"
+                          style={{ minWidth: 'auto', fontSize: '12px' }}
+                        >
+                          View Times
+                        </button>
+                        <button
+                          onClick={() => handleAddFavorite(stop)}
+                          className="btn-primary"
+                          style={{ minWidth: 'auto', fontSize: '12px' }}
+                        >
+                          Add to Favorites
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
