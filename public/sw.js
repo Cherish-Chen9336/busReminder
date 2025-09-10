@@ -1,14 +1,13 @@
-const CACHE_NAME = 'busReminder-v1';
-const BASE_PATH = '/busReminder';
+// Simple service worker for PWA functionality
+const CACHE_NAME = 'dubai-bus-buddy-v1';
 const urlsToCache = [
-  `${BASE_PATH}/`,
-  `${BASE_PATH}/index.html`,
-  `${BASE_PATH}/manifest.json`,
-  `${BASE_PATH}/assets/index-B2AojwPR.js`,
-  `${BASE_PATH}/assets/index-BT-Ptn8g.css`
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon-placeholder.svg'
 ];
 
-// Install Service Worker
+// Install event - cache resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -19,81 +18,18 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Intercept network requests
+// Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // If response is in cache, return cached response
-        if (response) {
-          return response;
-        }
-        
-        // Otherwise fetch from network
-        return fetch(event.request).then(
-          (response) => {
-            // Check if response is valid
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone response
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
+        // Return cached version or fetch from network
+        return response || fetch(event.request);
       })
   );
 });
 
-// Push notifications
-self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'New bus information update',
-    icon: `${BASE_PATH}/icon-placeholder.svg`,
-    badge: `${BASE_PATH}/icon-placeholder.svg`,
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'View Details',
-        icon: `${BASE_PATH}/icon-placeholder.svg`
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: `${BASE_PATH}/icon-placeholder.svg`
-      }
-    ]
-  };
-
-  event.waitUntil(
-    self.registration.showNotification('Bus Reminder', options)
-  );
-});
-
-// Notification click event
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow(`${BASE_PATH}/`)
-    );
-  }
-});
-
-// Activate event
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {

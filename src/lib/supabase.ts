@@ -2,33 +2,102 @@
 const SUPABASE_URL = "https://dxjaxszouwvmffeujpkx.supabase.co"
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4amF4c3pvdXd2bWZmZXVqcGt4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcyMzk4NDgsImV4cCI6MjA3MjgxNTg0OH0.i_bFhhlW20WZyvBvPHNAqCNGwX3wQNObY2e9JYqaK8s"
 
-// API call function for Supabase RPC
-async function callSupabaseRPC<T>(functionName: string, params: any = {}): Promise<T> {
+// API call function for Supabase RPC with timeout and retry
+async function callSupabaseRPC<T>(functionName: string, params: any = {}, retries: number = 3): Promise<T> {
   const url = `${SUPABASE_URL}/rest/v1/rpc/${functionName}`
   console.log(`Calling Supabase RPC: ${functionName}`, params)
   
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify(params)
-  })
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt}/${retries} for ${functionName}`)
+      
+      // Create AbortController for timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(params),
+        signal: controller.signal
+      })
 
-  console.log(`Response status: ${response.status} ${response.statusText}`)
+      clearTimeout(timeoutId)
+      console.log(`Response status: ${response.status} ${response.statusText}`)
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error('Supabase error response:', errorText)
-    throw new Error(`Supabase RPC call failed: ${response.status} ${response.statusText} - ${errorText}`)
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Supabase error response:', errorText)
+        
+        // If it's a server error (5xx) and we have retries left, retry
+        if (response.status >= 500 && attempt < retries) {
+          console.log(`Server error, retrying in ${attempt * 1000}ms...`)
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+          continue
+        }
+        
+        throw new Error(`Supabase RPC call failed: ${response.status} ${response.statusText} - ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log(`RPC ${functionName} response:`, data)
+      return data
+      
+    } catch (error) {
+      console.error(`Attempt ${attempt} failed:`, error)
+      
+      // If it's the last attempt or not a network error, throw
+      if (attempt === retries || (error as Error).name === 'AbortError') {
+        if ((error as Error).name === 'AbortError') {
+          throw new Error(`Request timeout after 10 seconds. Please check your connection and try again.`)
+        }
+        if ((error as Error).message.includes('ERR_CONNECTION_RESET') || (error as Error).message.includes('Failed to fetch')) {
+          throw new Error(`Connection failed. Please try refreshing the page or using incognito mode. If the problem persists, try disabling browser extensions.`)
+        }
+        throw error
+      }
+      
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+    }
   }
+  
+  throw new Error('All retry attempts failed')
+}
 
-  const data = await response.json()
-  console.log(`RPC ${functionName} response:`, data)
-  return data
+// Dubai center coordinates as fallback
+export const DUBAI_CENTER = {
+  lat: 25.2048,
+  lon: 55.2708
+}
+
+// Health check function
+export async function healthCheck() {
+  try {
+    console.log('Performing health check with Dubai center coordinates...')
+    const result = await callSupabaseRPC('nearby_stops', { 
+      lat: DUBAI_CENTER.lat, 
+      lon: DUBAI_CENTER.lon, 
+      radius_m: 1000 
+    })
+    return {
+      success: true,
+      data: result,
+      message: 'Supabase connection successful'
+    }
+  } catch (error) {
+    console.error('Health check failed:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      message: 'Supabase connection failed'
+    }
+  }
 }
 
 // RPC function calls

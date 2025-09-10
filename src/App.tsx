@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { getNearbyStops, getDepartures } from './lib/supabase'
+import { getNearbyStops, getDepartures, healthCheck, DUBAI_CENTER } from './lib/supabase'
 
 // Enhanced type definitions
 interface Stop {
@@ -65,8 +65,11 @@ function App() {
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [healthStatus, setHealthStatus] = useState<{success: boolean, message: string, data?: any, error?: string} | null>(null)
+  const [isHealthChecking, setIsHealthChecking] = useState(false)
+  const [useDubaiCenter, setUseDubaiCenter] = useState(false)
 
-  // Get user location
+  // Get user location with fallback to Dubai center
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       console.log('Requesting location permission...')
@@ -78,6 +81,7 @@ function App() {
           const { latitude, longitude } = position.coords
           console.log('Location obtained:', { lat: latitude, lon: longitude })
           setUserLocation({ lat: latitude, lon: longitude })
+          setUseDubaiCenter(false)
           setIsLoading(false)
         },
         (error) => {
@@ -85,13 +89,16 @@ function App() {
           let errorMessage = 'Unable to get location information'
           switch(error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Please allow location access in your browser settings'
+              errorMessage = 'Location access denied. Using Dubai center as fallback. Click "Use Dubai Center" to continue.'
+              setUseDubaiCenter(true)
               break
             case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable'
+              errorMessage = 'Location information is unavailable. Using Dubai center as fallback.'
+              setUseDubaiCenter(true)
               break
             case error.TIMEOUT:
-              errorMessage = 'Location request timed out'
+              errorMessage = 'Location request timed out. Using Dubai center as fallback.'
+              setUseDubaiCenter(true)
               break
           }
           setError(errorMessage)
@@ -104,13 +111,41 @@ function App() {
         }
       )
     } else {
-      setError('Geolocation is not supported by this browser')
+      setError('Geolocation is not supported by this browser. Using Dubai center as fallback.')
+      setUseDubaiCenter(true)
     }
+  }
+
+  // Use Dubai center as fallback location
+  const useDubaiCenterLocation = () => {
+    console.log('Using Dubai center as location:', DUBAI_CENTER)
+    setUserLocation(DUBAI_CENTER)
+    setUseDubaiCenter(true)
+    setError(null)
   }
 
   useEffect(() => {
     getCurrentLocation()
   }, [])
+
+  // Health check function
+  const performHealthCheck = async () => {
+    setIsHealthChecking(true)
+    setHealthStatus(null)
+    
+    try {
+      const result = await healthCheck()
+      setHealthStatus(result)
+    } catch (error) {
+      setHealthStatus({
+        success: false,
+        message: 'Health check failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    } finally {
+      setIsHealthChecking(false)
+    }
+  }
 
   // Load nearby stops when location is available
   useEffect(() => {
@@ -314,12 +349,80 @@ function App() {
           </div>
         )}
 
+        {/* Health Check */}
+        <div className="card" style={{ margin: '20px', marginTop: '10px' }}>
+          <div className="card-header">
+            🔧 System Health Check
+          </div>
+          <div style={{ padding: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+              <button
+                onClick={performHealthCheck}
+                disabled={isHealthChecking}
+                className="btn-primary"
+                style={{ minWidth: 'auto' }}
+              >
+                {isHealthChecking ? 'Checking...' : 'Test Supabase Connection'}
+              </button>
+              {useDubaiCenter && (
+                <button
+                  onClick={useDubaiCenterLocation}
+                  className="btn-outline"
+                  style={{ minWidth: 'auto' }}
+                >
+                  Use Dubai Center
+                </button>
+              )}
+            </div>
+            
+            {healthStatus && (
+              <div style={{ 
+                padding: '12px', 
+                borderRadius: '8px', 
+                backgroundColor: healthStatus.success ? '#f0f9ff' : '#fef2f2',
+                border: `1px solid ${healthStatus.success ? 'var(--success)' : 'var(--danger)'}`,
+                fontSize: '14px'
+              }}>
+                <div style={{ 
+                  color: healthStatus.success ? 'var(--success)' : 'var(--danger)',
+                  fontWeight: 'bold',
+                  marginBottom: '8px'
+                }}>
+                  {healthStatus.success ? '✅' : '❌'} {healthStatus.message}
+                </div>
+                {healthStatus.error && (
+                  <div style={{ color: 'var(--danger)', fontSize: '12px', marginTop: '4px' }}>
+                    Error: {healthStatus.error}
+                  </div>
+                )}
+                {healthStatus.data && (
+                  <details style={{ marginTop: '8px' }}>
+                    <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>View Response Data</summary>
+                    <pre style={{ 
+                      marginTop: '8px', 
+                      padding: '8px', 
+                      backgroundColor: '#f8fafc', 
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      overflow: 'auto',
+                      maxHeight: '200px'
+                    }}>
+                      {JSON.stringify(healthStatus.data, null, 2)}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Debug Info */}
         {import.meta.env.DEV && (
           <div className="card" style={{ margin: '20px', marginTop: '10px', fontSize: '12px' }}>
             <div style={{ padding: '16px' }}>
               <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 12px 0' }}>Debug Info</h4>
               <p><strong>User Location:</strong> {userLocation ? `${userLocation.lat.toFixed(6)}, ${userLocation.lon.toFixed(6)}` : 'Not obtained'}</p>
+              <p><strong>Using Dubai Center:</strong> {useDubaiCenter ? 'Yes' : 'No'}</p>
               <p><strong>Nearby Stops Count:</strong> {nearbyStops.length}</p>
               <p><strong>Closest Stop:</strong> {closestStop ? closestStop.name : 'None'}</p>
               <p><strong>Departures Count:</strong> {departures.length}</p>
