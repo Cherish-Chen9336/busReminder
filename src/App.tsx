@@ -920,14 +920,14 @@ function App() {
                           
                           {/* Stop Name - Vertical text below the route line */}
                           <div style={{
-                            fontSize: '10px',
+                            fontSize: '12px', // Increase font size
                             color: stop.isCurrent ? 'var(--success)' : 'var(--text-primary)',
-                            fontWeight: stop.isCurrent ? 'bold' : 'normal',
+                            fontWeight: 'bold', // Always bold
                             marginTop: '25px', // Move further down to avoid bus icon
                             backgroundColor: 'rgba(255,255,255,0.95)',
                             padding: '4px 2px',
                             borderRadius: '4px',
-                            border: stop.isCurrent ? '2px solid var(--success)' : '1px solid var(--border-light)',
+                            border: 'none', // Remove border
                             writingMode: 'vertical-rl',
                             textOrientation: 'mixed',
                             whiteSpace: 'nowrap',
@@ -953,7 +953,7 @@ function App() {
                               marginTop: '25px', // Same level as station name
                               backgroundColor: 'var(--warning)',
                               color: 'white',
-                              padding: '4px 2px',
+                              padding: '1px 2px', // Reduce top and bottom padding
                               borderRadius: '3px',
                               display: 'flex',
                               flexDirection: 'column', // Vertical layout
@@ -966,7 +966,7 @@ function App() {
                               transform: 'translate(30px, 0)', // Move to the right of station name
                               zIndex: 4,
                               maxWidth: '30px',
-                              minHeight: '60px'
+                              minHeight: '50px' // Reduce minHeight
                             }}>
                               {stop.transferRoutes.map((route, routeIndex) => (
                                 <div key={routeIndex} style={{
