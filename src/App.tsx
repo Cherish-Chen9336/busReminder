@@ -831,7 +831,7 @@ function App() {
                   }}>
                     <div style={{
                       width: '3800px',
-                      height: '120px',
+                      height: '200px', // Increase height to accommodate all elements
                       position: 'relative',
                       display: 'flex',
                       alignItems: 'center'
@@ -849,7 +849,7 @@ function App() {
                         {/* Bus Position Indicator - Static at current stop */}
                         <div style={{
                           position: 'absolute',
-                          top: '-20px',
+                          top: '-35px', // Move further up above the route line
                           left: '900px', // Position at Palm Jumeirah (950px - 50px offset)
                           width: '32px',
                           height: '32px',
@@ -923,7 +923,7 @@ function App() {
                             fontSize: '10px',
                             color: stop.isCurrent ? 'var(--success)' : 'var(--text-primary)',
                             fontWeight: stop.isCurrent ? 'bold' : 'normal',
-                            marginTop: '20px', // Move further down to avoid bus icon
+                            marginTop: '25px', // Move further down to avoid bus icon
                             backgroundColor: 'rgba(255,255,255,0.95)',
                             padding: '4px 2px',
                             borderRadius: '4px',
@@ -931,7 +931,7 @@ function App() {
                             writingMode: 'vertical-rl',
                             textOrientation: 'mixed',
                             whiteSpace: 'nowrap',
-                            minHeight: '60px',
+                            minHeight: '50px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -945,12 +945,12 @@ function App() {
                             {stop.name}
                           </div>
                           
-                          {/* Transfer Info - Below the name */}
+                          {/* Transfer Info - Below the name with more spacing */}
                           {stop.isTransfer && stop.transferRoutes && (
                             <div style={{
                               fontSize: '8px',
                               fontWeight: 'bold',
-                              marginTop: '85px', // Position below the stop name
+                              marginTop: '100px', // Position further below the stop name
                               backgroundColor: 'var(--warning)',
                               color: 'white',
                               padding: '2px 4px',
@@ -963,7 +963,8 @@ function App() {
                               top: '50%',
                               left: '50%',
                               transform: 'translate(-50%, 0)',
-                              zIndex: 4
+                              zIndex: 4,
+                              maxWidth: '80px'
                             }}>
                               {stop.transferRoutes.map((route, routeIndex) => (
                                 <span key={routeIndex}>{route}</span>
