@@ -100,6 +100,29 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 
+@keyframes busMove {
+  0% { 
+    transform: translateX(0) scaleX(1);
+    left: 30%;
+  }
+  25% { 
+    transform: translateX(0) scaleX(1);
+    left: 45%;
+  }
+  50% { 
+    transform: translateX(0) scaleX(-1);
+    left: 60%;
+  }
+  75% { 
+    transform: translateX(0) scaleX(-1);
+    left: 75%;
+  }
+  100% { 
+    transform: translateX(0) scaleX(1);
+    left: 30%;
+  }
+}
+
 /* Component animations */
 .fade-in {
   animation: fadeIn 0.3s ease-out;
