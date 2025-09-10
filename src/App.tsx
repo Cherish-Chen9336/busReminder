@@ -265,16 +265,16 @@ function App() {
       
       if (Array.isArray(deps) && deps.length > 0) {
         console.log('First departure:', deps[0])
-        // Map the data to our Departure interface if needed
+        // Map the data to our Departure interface based on actual Supabase response structure
         const mappedDepartures = deps.map((dep: any) => ({
-          route: dep.route || dep.route_number || 'Unknown',
-          headsign: dep.headsign || dep.destination || dep.headsign_text || 'Unknown Destination',
-          etaMin: dep.eta_min || dep.eta || 0,
-          scheduled: dep.scheduled || dep.scheduled_time || 'Unknown',
+          route: dep.route_name || dep.route_id || dep.route || 'Unknown',
+          headsign: dep.headsign || dep.destination || dep.headsign_text || dep.trip_headsign || 'Unknown Destination',
+          etaMin: dep.eta_minutes || dep.eta_min || dep.eta || 0,
+          scheduled: dep.planned_time || dep.scheduled_time || dep.scheduled || 'Unknown',
           status: dep.status || 'ON_TIME',
-          direction: dep.direction || 'Unknown',
-          platform: dep.platform || dep.platform_number || 'Unknown',
-          realtime: dep.realtime || false
+          direction: dep.direction || dep.trip_direction || 'Unknown',
+          platform: dep.platform || dep.platform_number || dep.stop_platform || 'Unknown',
+          realtime: dep.realtime || dep.is_realtime || false
         }))
         console.log('Mapped departures:', mappedDepartures)
         setDepartures(mappedDepartures)
