@@ -128,6 +128,15 @@ function App() {
     getCurrentLocation()
   }, [])
 
+  // Cleanup search timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout)
+      }
+    }
+  }, [])
+
   // Health check function
   const performHealthCheck = async () => {
     setIsHealthChecking(true)
@@ -214,7 +223,7 @@ function App() {
     return () => clearInterval(interval)
   }, [closestStop])
 
-  // Search functionality
+  // Search functionality with debouncing
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
     if (query.trim().length < 2) {
@@ -228,8 +237,8 @@ function App() {
       
       // First try to search in nearby stops
       let results = nearbyStops.filter(stop =>
-        stop.name.toLowerCase().includes(query.toLowerCase()) ||
-        stop.code.toLowerCase().includes(query.toLowerCase())
+        (stop.name && stop.name.toLowerCase().includes(query.toLowerCase())) ||
+        (stop.code && stop.code.toLowerCase().includes(query.toLowerCase()))
       )
       
       console.log('Results from nearby stops:', results)
@@ -240,8 +249,8 @@ function App() {
         try {
           const broaderResults = await getNearbyStops(userLocation.lat, userLocation.lon, 5000) as Stop[]
           results = broaderResults.filter(stop =>
-            stop.name.toLowerCase().includes(query.toLowerCase()) ||
-            stop.code.toLowerCase().includes(query.toLowerCase())
+            (stop.name && stop.name.toLowerCase().includes(query.toLowerCase())) ||
+            (stop.code && stop.code.toLowerCase().includes(query.toLowerCase()))
           )
           console.log('Broader search results:', results)
         } catch (err) {
@@ -265,6 +274,29 @@ function App() {
     } finally {
       setIsSearching(false)
     }
+  }
+
+  // Debounced search function
+  const [searchTimeout, setSearchTimeout] = useState<number | null>(null)
+  
+  const handleSearchInput = (query: string) => {
+    setSearchQuery(query)
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+    
+    // Set new timeout for search
+    const timeout = setTimeout(() => {
+      if (query.trim().length >= 2) {
+        handleSearch(query)
+      } else {
+        setSearchResults([])
+      }
+    }, 500) // Wait 500ms after user stops typing
+    
+    setSearchTimeout(timeout)
   }
 
   // Add to favorites
@@ -533,12 +565,12 @@ function App() {
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <div style={{ position: 'relative', flex: 1 }}>
-                <input
-                  type="text"
-                  placeholder="Search for bus station name or area..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="search-input"
+              <input
+                type="text"
+                placeholder="Search for bus station name or area..."
+                value={searchQuery}
+                  onChange={(e) => handleSearchInput(e.target.value)}
+                className="search-input"
                   style={{ width: '100%', paddingRight: searchQuery ? '40px' : '16px' }}
                 />
                 {searchQuery && (
@@ -625,13 +657,13 @@ function App() {
                         >
                           View Times
                         </button>
-                        <button
-                          onClick={() => handleAddFavorite(stop)}
-                          className="btn-primary"
+                      <button
+                        onClick={() => handleAddFavorite(stop)}
+                        className="btn-primary"
                           style={{ minWidth: 'auto', fontSize: '12px' }}
-                        >
-                          Add to Favorites
-                        </button>
+                      >
+                        Add to Favorites
+                      </button>
                       </div>
                     </div>
                   </div>
@@ -668,13 +700,13 @@ function App() {
                         >
                           View Times
                         </button>
-                        <button
-                          onClick={() => handleRemoveFavorite(stop.id)}
-                          className="btn-secondary"
+                      <button
+                        onClick={() => handleRemoveFavorite(stop.id)}
+                        className="btn-secondary"
                           style={{ minWidth: 'auto', padding: '8px 16px', fontSize: '12px' }}
-                        >
-                          Remove
-                        </button>
+                      >
+                        Remove
+                      </button>
                       </div>
                     </div>
                     

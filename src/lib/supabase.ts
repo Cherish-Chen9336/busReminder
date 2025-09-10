@@ -107,8 +107,8 @@ export async function getNearbyStops(lat: number, lon: number, radius_m: number 
 
 export async function getDepartures(stopId: string, at: string, limit_n: number = 20) {
   return callSupabaseRPC('departures', { 
-    p_stop_id: stopId, 
+    limit_n,
     p_at: at, 
-    limit_n 
+    p_stop_id: stopId
   })
 }
