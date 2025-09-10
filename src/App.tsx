@@ -190,7 +190,21 @@ function App() {
       // Set closest stop
       if (stops.length > 0) {
         console.log('All stops received:', stops)
-        const closest = stops.reduce((prev: Stop, current: Stop) => 
+        
+        // Map Supabase response to our Stop interface
+        const mappedStops = stops.map((stop: any) => ({
+          id: stop.stop_id,
+          name: stop.stop_name,
+          code: stop.stop_id, // Use stop_id as code
+          distance: stop.distance_m,
+          lat: stop.stop_lat,
+          lon: stop.stop_lon
+        }))
+        
+        console.log('Mapped stops:', mappedStops)
+        setNearbyStops(mappedStops)
+        
+        const closest = mappedStops.reduce((prev, current) => 
           (prev.distance || 0) < (current.distance || 0) ? prev : current
         )
         console.log('Closest stop details:', closest)
@@ -272,8 +286,17 @@ function App() {
       if (results.length === 0 && userLocation) {
         console.log('No nearby results, trying broader search...')
         try {
-          const broaderResults = await getNearbyStops(userLocation.lat, userLocation.lon, 5000) as Stop[]
-          results = broaderResults.filter(stop =>
+          const broaderResults = await getNearbyStops(userLocation.lat, userLocation.lon, 5000) as any[]
+          // Map Supabase response to our Stop interface
+          const mappedBroaderResults = broaderResults.map((stop: any) => ({
+            id: stop.stop_id,
+            name: stop.stop_name,
+            code: stop.stop_id,
+            distance: stop.distance_m,
+            lat: stop.stop_lat,
+            lon: stop.stop_lon
+          }))
+          results = mappedBroaderResults.filter(stop =>
             (stop.name && stop.name.toLowerCase().includes(query.toLowerCase())) ||
             (stop.code && stop.code.toLowerCase().includes(query.toLowerCase()))
           )
