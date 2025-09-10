@@ -702,127 +702,172 @@ function App() {
                 </button>
               </div>
 
+              {/* Start and End Station Info */}
+              <div style={{
+                padding: '16px 20px',
+                backgroundColor: 'var(--light-gray)',
+                borderBottom: '1px solid var(--border-light)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>START</div>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--success)' }}>Dubai Mall</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Terminal Station</div>
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    color: 'var(--text-muted)',
+                    fontSize: '12px'
+                  }}>
+                    <span>→</span>
+                    <span>25 stops</span>
+                    <span>→</span>
+                  </div>
+                  <div style={{ textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>END</div>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>JBR Beach</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Terminal Station</div>
+                  </div>
+                </div>
+              </div>
+
               {/* Route Map */}
               <div style={{ padding: '20px' }}>
                 <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-blue)' }}>
                   Route Map
                 </h3>
                 <div style={{
-                  height: '200px',
+                  height: '300px',
                   backgroundColor: 'var(--light-gray)',
                   borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
-                  {/* Horizontal Route Line */}
+                  {/* Scrollable Route Container */}
                   <div style={{
-                    width: '90%',
-                    height: '4px',
-                    backgroundColor: 'var(--primary-blue)',
-                    position: 'relative'
+                    height: '100%',
+                    overflowX: 'auto',
+                    overflowY: 'hidden',
+                    padding: '20px 0'
                   }}>
-                    {/* Bus Position Indicator */}
                     <div style={{
-                      position: 'absolute',
-                      top: '-16px',
-                      left: '30%',
-                      width: '32px',
-                      height: '32px',
+                      width: '2000px',
+                      height: '100%',
+                      position: 'relative',
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '24px',
-                      animation: 'busMove 3s ease-in-out infinite'
+                      alignItems: 'center'
                     }}>
-                      🚌
-                    </div>
-                  </div>
-                  
-                  {/* Route Stops */}
-                  {[
-                    { name: 'Dubai Mall', position: '10%', isTransfer: true, transferRoutes: ['F11', 'F12'] },
-                    { name: 'Burj Khalifa', position: '25%', isTransfer: false },
-                    { name: 'Downtown Dubai', position: '40%', isTransfer: true, transferRoutes: ['F15', 'F20'] },
-                    { name: 'Business Bay', position: '55%', isTransfer: false },
-                    { name: 'Dubai Marina', position: '70%', isTransfer: true, transferRoutes: ['F25', 'F30'] },
-                    { name: 'JBR', position: '85%', isTransfer: false }
-                  ].map((stop, index) => (
-                    <div key={index} style={{
-                      position: 'absolute',
-                      top: '20px',
-                      left: stop.position,
-                      transform: 'translateX(-50%)',
-                      textAlign: 'center'
-                    }}>
-                      {/* Stop Marker */}
+                      {/* Horizontal Route Line */}
                       <div style={{
-                        width: '12px',
-                        height: '12px',
-                        backgroundColor: stop.isTransfer ? 'var(--warning)' : 'var(--primary-blue)',
-                        borderRadius: '50%',
-                        margin: '0 auto 4px',
-                        border: '2px solid white',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                      }}></div>
-                      {/* Stop Name */}
-                      <div style={{
-                        fontSize: '10px',
-                        color: 'var(--text-primary)',
-                        fontWeight: 'bold',
-                        whiteSpace: 'nowrap',
-                        backgroundColor: 'rgba(255,255,255,0.9)',
-                        padding: '2px 4px',
-                        borderRadius: '4px',
-                        marginTop: '2px'
+                        width: '100%',
+                        height: '4px',
+                        backgroundColor: 'var(--primary-blue)',
+                        position: 'absolute',
+                        top: '50%',
+                        transform: 'translateY(-50%)'
                       }}>
-                        {stop.name}
-                      </div>
-                      {/* Transfer Info */}
-                      {stop.isTransfer && stop.transferRoutes && (
+                        {/* Bus Position Indicator */}
                         <div style={{
-                          fontSize: '8px',
-                          fontWeight: 'bold',
-                          marginTop: '2px',
-                          backgroundColor: 'var(--warning)',
-                          color: 'white',
-                          padding: '1px 3px',
-                          borderRadius: '2px'
+                          position: 'absolute',
+                          top: '-16px',
+                          left: '300px', // Fixed position based on current stop
+                          width: '32px',
+                          height: '32px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '24px',
+                          animation: 'busMoveHorizontal 4s ease-in-out infinite'
                         }}>
-                          {stop.transferRoutes.join(', ')}
+                          🚌
                         </div>
-                      )}
+                      </div>
+                      
+                      {/* Route Stops */}
+                      {[
+                        { name: 'Dubai Mall', position: 50, isTransfer: true, transferRoutes: ['F11', 'F12'], isCurrent: false },
+                        { name: 'Burj Khalifa', position: 150, isTransfer: false, isCurrent: false },
+                        { name: 'Downtown Dubai', position: 250, isTransfer: true, transferRoutes: ['F15', 'F20'], isCurrent: false },
+                        { name: 'Business Bay', position: 350, isTransfer: false, isCurrent: true }, // Current stop
+                        { name: 'Dubai Marina', position: 450, isTransfer: true, transferRoutes: ['F25', 'F30'], isCurrent: false },
+                        { name: 'JBR', position: 550, isTransfer: false, isCurrent: false },
+                        { name: 'Palm Jumeirah', position: 650, isTransfer: true, transferRoutes: ['F35', 'F40'], isCurrent: false },
+                        { name: 'Dubai Hills', position: 750, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Sports City', position: 850, isTransfer: true, transferRoutes: ['F45', 'F50'], isCurrent: false },
+                        { name: 'JBR Beach', position: 950, isTransfer: false, isCurrent: false }
+                      ].map((stop, index) => (
+                        <div key={index} style={{
+                          position: 'absolute',
+                          left: `${stop.position}px`,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          textAlign: 'center',
+                          zIndex: stop.isCurrent ? 10 : 5
+                        }}>
+                          {/* Stop Marker */}
+                          <div style={{
+                            width: stop.isCurrent ? '16px' : '12px',
+                            height: stop.isCurrent ? '16px' : '12px',
+                            backgroundColor: stop.isCurrent ? 'var(--success)' : 
+                                           stop.isTransfer ? 'var(--warning)' : 'var(--primary-blue)',
+                            borderRadius: '50%',
+                            margin: '0 auto 8px',
+                            border: stop.isCurrent ? '3px solid white' : '2px solid white',
+                            boxShadow: stop.isCurrent ? '0 4px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
+                            animation: stop.isCurrent ? 'pulse 2s infinite' : 'none'
+                          }}></div>
+                          
+                          {/* Stop Number */}
+                          <div style={{
+                            fontSize: '10px',
+                            color: 'var(--text-muted)',
+                            fontWeight: 'bold',
+                            marginBottom: '4px'
+                          }}>
+                            {index + 1}
+                          </div>
+                          
+                          {/* Stop Name - Vertical Text */}
+                          <div style={{
+                            fontSize: '10px',
+                            color: stop.isCurrent ? 'var(--success)' : 'var(--text-primary)',
+                            fontWeight: stop.isCurrent ? 'bold' : 'normal',
+                            writingMode: 'vertical-rl',
+                            textOrientation: 'mixed',
+                            whiteSpace: 'nowrap',
+                            backgroundColor: 'rgba(255,255,255,0.95)',
+                            padding: '4px 2px',
+                            borderRadius: '4px',
+                            border: stop.isCurrent ? '2px solid var(--success)' : '1px solid var(--border-light)',
+                            minHeight: '60px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            {stop.name}
+                          </div>
+                          
+                          {/* Transfer Info */}
+                          {stop.isTransfer && stop.transferRoutes && (
+                            <div style={{
+                              fontSize: '8px',
+                              fontWeight: 'bold',
+                              marginTop: '4px',
+                              backgroundColor: 'var(--warning)',
+                              color: 'white',
+                              padding: '2px 4px',
+                              borderRadius: '3px',
+                              writingMode: 'horizontal-tb',
+                              textOrientation: 'mixed'
+                            }}>
+                              {stop.transferRoutes.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  
-                  {/* Start and End Points */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '20px',
-                    left: '20px',
-                    backgroundColor: 'var(--success)',
-                    color: 'white',
-                    padding: '8px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: 'bold'
-                  }}>
-                    START
-                  </div>
-                  <div style={{
-                    position: 'absolute',
-                    top: '20px',
-                    right: '20px',
-                    backgroundColor: 'var(--danger)',
-                    color: 'white',
-                    padding: '8px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: 'bold'
-                  }}>
-                    END
                   </div>
                 </div>
 
@@ -839,6 +884,10 @@ function App() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <div style={{ width: '12px', height: '12px', backgroundColor: 'var(--warning)', borderRadius: '50%' }}></div>
                       <span style={{ fontSize: '12px' }}>Transfer Stop</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ width: '16px', height: '16px', backgroundColor: 'var(--success)', borderRadius: '50%', animation: 'pulse 2s infinite' }}></div>
+                      <span style={{ fontSize: '12px' }}>Current Stop</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '16px' }}>🚌</span>

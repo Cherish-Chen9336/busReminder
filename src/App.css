@@ -110,16 +110,39 @@ body {
     left: 45%;
   }
   50% { 
-    transform: translateX(0) scaleX(-1);
+    transform: translateX(0) scaleX(1);
     left: 60%;
   }
   75% { 
-    transform: translateX(0) scaleX(-1);
+    transform: translateX(0) scaleX(1);
     left: 75%;
   }
   100% { 
     transform: translateX(0) scaleX(1);
     left: 30%;
+  }
+}
+
+@keyframes busMoveHorizontal {
+  0% { 
+    transform: translateX(0);
+    left: 300px;
+  }
+  25% { 
+    transform: translateX(50px);
+    left: 300px;
+  }
+  50% { 
+    transform: translateX(100px);
+    left: 300px;
+  }
+  75% { 
+    transform: translateX(50px);
+    left: 300px;
+  }
+  100% { 
+    transform: translateX(0);
+    left: 300px;
   }
 }
 
