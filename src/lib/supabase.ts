@@ -133,9 +133,10 @@ export async function getNearbyStops(lat: number, lon: number, radius_m: number 
 }
 
 export async function getDepartures(stopId: string, at: string, limit_n: number = 20) {
+  console.log('Calling getDepartures with params:', { stopId, at, limit_n })
   return callSupabaseRPC('departures', { 
-    limit_n,
-    p_at: at, 
-    p_stop_id: stopId
+    p_stop_id: stopId,
+    p_at: at,
+    limit_n
   })
 }

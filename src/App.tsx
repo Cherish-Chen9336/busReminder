@@ -152,9 +152,26 @@ function App() {
     setHealthStatus(null)
     
     try {
+      console.log('Starting health check...')
       const result = await healthCheck()
+      console.log('Health check completed:', result)
       setHealthStatus(result)
+      
+      // If health check is successful, try to load departures for the first stop
+      if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        const firstStop = result.data[0]
+        console.log('Testing departures for first stop:', firstStop)
+        if (firstStop.stop_id) {
+          try {
+            const testDepartures = await getDepartures(firstStop.stop_id, new Date().toISOString(), 5)
+            console.log('Test departures result:', testDepartures)
+          } catch (depErr) {
+            console.error('Test departures failed:', depErr)
+          }
+        }
+      }
     } catch (error) {
+      console.error('Health check error:', error)
       setHealthStatus({
         success: false,
         message: 'Health check failed',
@@ -480,6 +497,27 @@ function App() {
                 style={{ minWidth: 'auto' }}
               >
                 {isHealthChecking ? 'Checking...' : 'Test Supabase Connection'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (closestStop && closestStop.id) {
+                    console.log('Testing departures for closest stop:', closestStop.id)
+                    try {
+                      const testResult = await getDepartures(closestStop.id, new Date().toISOString(), 5)
+                      console.log('Direct departures test result:', testResult)
+                      alert(`Departures test result: ${JSON.stringify(testResult, null, 2)}`)
+                    } catch (err) {
+                      console.error('Direct departures test failed:', err)
+                      alert(`Departures test failed: ${err}`)
+                    }
+                  } else {
+                    alert('No closest stop available for testing')
+                  }
+                }}
+                className="btn-outline"
+                style={{ minWidth: 'auto' }}
+              >
+                🚌 Test Departures
               </button>
               {useDubaiCenter && (
                 <button
