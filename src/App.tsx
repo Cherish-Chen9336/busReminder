@@ -26,6 +26,13 @@ interface Departure {
   nextStop?: string
 }
 
+interface RouteInfo {
+  route: string
+  headsign: string
+  nextDeparture: Departure
+  allDepartures: Departure[]
+}
+
 // Mock data removed - now using Supabase RPC calls
 
 // Local storage hook
@@ -63,7 +70,7 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [closestStop, setClosestStop] = useState<Stop | null>(null)
   const [nearbyStops, setNearbyStops] = useState<Stop[]>([])
-  const [departures, setDepartures] = useState<Departure[]>([])
+  const [departures, setDepartures] = useState<RouteInfo[]>([])
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,6 +78,8 @@ function App() {
   const [isHealthChecking, setIsHealthChecking] = useState(false)
   const [useDubaiCenter, setUseDubaiCenter] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'failed' | 'idle'>('idle')
+  const [selectedRoute, setSelectedRoute] = useState<any>(null)
+  const [showRouteDetail, setShowRouteDetail] = useState(false)
 
   // Get user location with fallback to Dubai center
   const getCurrentLocation = () => {
@@ -284,9 +293,29 @@ function App() {
         // Filter to show only departures within next 2 hours (120 minutes)
         const filteredDepartures = mappedDepartures.filter(dep => dep.etaMin <= 120)
         
+        // Group by route to show unique routes
+        const uniqueRoutes = new Map()
+        filteredDepartures.forEach(dep => {
+          if (!uniqueRoutes.has(dep.route)) {
+            uniqueRoutes.set(dep.route, {
+              route: dep.route,
+              headsign: dep.headsign,
+              nextDeparture: dep,
+              allDepartures: []
+            })
+          }
+          uniqueRoutes.get(dep.route).allDepartures.push(dep)
+        })
+        
+        // Convert to array and sort by next departure time
+        const routeList = Array.from(uniqueRoutes.values()).sort((a, b) => 
+          a.nextDeparture.etaMin - b.nextDeparture.etaMin
+        )
+        
         console.log('Mapped departures:', mappedDepartures)
         console.log('Filtered departures (next 2 hours):', filteredDepartures)
-        setDepartures(filteredDepartures)
+        console.log('Unique routes:', routeList)
+        setDepartures(routeList)
       } else {
         console.log('No departures found for this stop')
         setDepartures([])
@@ -619,6 +648,190 @@ function App() {
           </div>
         </header>
 
+        {/* Route Detail Modal */}
+        {showRouteDetail && selectedRoute && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '800px',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: '20px',
+                borderBottom: '1px solid var(--border-light)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <h2 style={{ margin: 0, color: 'var(--primary-blue)' }}>
+                    Route {selectedRoute.route}
+                  </h2>
+                  <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
+                    To: {selectedRoute.headsign}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowRouteDetail(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Route Map */}
+              <div style={{ padding: '20px' }}>
+                <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-blue)' }}>
+                  Route Map
+                </h3>
+                <div style={{
+                  height: '200px',
+                  backgroundColor: 'var(--light-gray)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Horizontal Route Line */}
+                  <div style={{
+                    width: '90%',
+                    height: '4px',
+                    backgroundColor: 'var(--primary-blue)',
+                    position: 'relative'
+                  }}>
+                    {/* Bus Position Indicator */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      left: '30%',
+                      width: '20px',
+                      height: '20px',
+                      backgroundColor: 'var(--success)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      color: 'white',
+                      animation: 'pulse 2s infinite'
+                    }}>
+                      🚌
+                    </div>
+                  </div>
+                  
+                  {/* Start and End Points */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '20px',
+                    backgroundColor: 'var(--success)',
+                    color: 'white',
+                    padding: '8px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    START
+                  </div>
+                  <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    backgroundColor: 'var(--danger)',
+                    color: 'white',
+                    padding: '8px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    END
+                  </div>
+                </div>
+
+                {/* Route Information */}
+                <div style={{ marginTop: '20px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: 'var(--primary-blue)' }}>
+                    Route Information
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <strong>Operating Hours:</strong><br />
+                      <span style={{ color: 'var(--text-secondary)' }}>06:00 - 23:00</span>
+                    </div>
+                    <div>
+                      <strong>Fare:</strong><br />
+                      <span style={{ color: 'var(--text-secondary)' }}>AED 3.00</span>
+                    </div>
+                    <div>
+                      <strong>Frequency:</strong><br />
+                      <span style={{ color: 'var(--text-secondary)' }}>Every 15-20 minutes</span>
+                    </div>
+                    <div>
+                      <strong>Total Stops:</strong><br />
+                      <span style={{ color: 'var(--text-secondary)' }}>25 stops</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* All Departures */}
+                <div style={{ marginTop: '20px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', color: 'var(--primary-blue)' }}>
+                    All Departures (Next 2 Hours)
+                  </h4>
+                  <div style={{ maxHeight: '200px', overflow: 'auto' }}>
+                    {selectedRoute.allDepartures.map((dep: any, index: number) => (
+                      <div key={index} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px',
+                        borderBottom: '1px solid var(--border-light)',
+                        backgroundColor: index % 2 === 0 ? 'var(--light-gray)' : 'white'
+                      }}>
+                        <div>
+                          <span style={{ fontWeight: 'bold' }}>{dep.etaMin} min</span>
+                          <span style={{ marginLeft: '8px', color: 'var(--text-secondary)' }}>
+                            {dep.scheduled}
+                          </span>
+                        </div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                          {dep.status === 'DELAYED' ? '⚠️ DELAYED' : 
+                           dep.status === 'EARLY' ? '⚡ EARLY' : '✅ ON TIME'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Closest Station Section */}
         {closestStop && (
           <div className="card" style={{ margin: '20px' }}>
@@ -655,45 +868,56 @@ function App() {
                     📍 Showing next 2 hours of departures from this stop
                   </div>
               <div className="bus-grid">
-                  {departures.map((dep, index) => (
-                  <div key={index} className="bus-card">
+                  {departures.map((route, index) => (
+                  <div 
+                    key={index} 
+                    className="bus-card"
+                    onClick={() => {
+                      setSelectedRoute(route)
+                      setShowRouteDetail(true)
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div className="route-badge">
-                        {dep.route}
+                        {route.route}
                       </div>
                       <div style={{ 
-                        color: getStatusColor(dep.status || 'ON_TIME'),
+                        color: getStatusColor(route.nextDeparture.status || 'ON_TIME'),
                         fontSize: '12px',
                         fontWeight: 'bold'
                       }}>
-                        {dep.status === 'DELAYED' ? '⚠️ DELAYED' : 
-                         dep.status === 'EARLY' ? '⚡ EARLY' : '✅ ON TIME'}
+                        {route.nextDeparture.status === 'DELAYED' ? '⚠️ DELAYED' : 
+                         route.nextDeparture.status === 'EARLY' ? '⚡ EARLY' : '✅ ON TIME'}
                       </div>
                     </div>
                     
                     <div style={{ marginBottom: '12px' }}>
                       <div style={{ color: 'var(--text-primary)', fontWeight: 'bold', marginBottom: '4px' }}>
-                          To: {dep.headsign}
+                          To: {route.headsign}
                       </div>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '4px' }}>
-                        {getDirectionLabel(dep.direction)} • Platform {dep.platform}
-                      </div>
-                        {(dep as any).currentStop && (dep as any).currentStop !== 'Unknown' && (
+                          {getDirectionLabel(route.nextDeparture.direction)} • Platform {route.nextDeparture.platform}
+                        </div>
+                        {route.nextDeparture.currentStop && route.nextDeparture.currentStop !== 'Unknown' && (
                           <div style={{ color: 'var(--info)', fontSize: '12px', fontStyle: 'italic' }}>
-                            Currently at: {(dep as any).currentStop}
-                          </div>
+                            Currently at: {route.nextDeparture.currentStop}
+                      </div>
                         )}
+                        <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '4px' }}>
+                          {route.allDepartures.length} departures in next 2 hours
+                      </div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className={`eta-display ${getETAColorClass(dep.etaMin)}`}>
-                        {dep.etaMin} min
+                      <div className={`eta-display ${getETAColorClass(route.nextDeparture.etaMin)}`}>
+                        {route.nextDeparture.etaMin} min
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                          Scheduled: {dep.scheduled}
+                          Next: {route.nextDeparture.scheduled}
                         </div>
-                        {dep.realtime && (
+                        {route.nextDeparture.realtime && (
                           <div className="realtime-indicator">
                             Live data
                           </div>
@@ -883,7 +1107,7 @@ function App() {
                       <h5 style={{ color: 'var(--text-primary)', margin: '0 0 12px 0', fontSize: '16px' }}>
                         Upcoming Buses:
                       </h5>
-                      {departures.slice(0, 3).map((dep, index) => (
+                      {departures.slice(0, 3).map((route, index) => (
                         <div key={index} style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between', 
@@ -893,19 +1117,19 @@ function App() {
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div className="route-badge" style={{ fontSize: '14px', padding: '6px 10px' }}>
-                              {dep.route}
+                              {route.route}
                             </div>
                             <div>
                               <div style={{ color: 'var(--text-primary)', fontSize: '14px' }}>
-                                {dep.headsign}
+                                {route.headsign}
                               </div>
                               <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                                {getDirectionLabel(dep.direction)}
+                                {getDirectionLabel(route.nextDeparture.direction || 'TO_DUBAI')}
                               </div>
                             </div>
                           </div>
-                          <div className={`eta-display ${getETAColorClass(dep.etaMin)}`} style={{ fontSize: '18px' }}>
-                            {dep.etaMin} min
+                          <div className={`eta-display ${getETAColorClass(route.nextDeparture.etaMin || 0)}`} style={{ fontSize: '18px' }}>
+                            {route.nextDeparture.etaMin || 0} min
                           </div>
                         </div>
                       ))}
