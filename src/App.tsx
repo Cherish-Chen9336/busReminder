@@ -729,7 +729,7 @@ function App() {
                     padding: '20px 0'
                   }}>
                     <div style={{
-                      width: '4000px',
+                      width: '3800px',
                       height: '120px',
                       position: 'relative',
                       display: 'flex',
@@ -748,7 +748,7 @@ function App() {
                         <div style={{
                           position: 'absolute',
                           top: '-20px',
-                          left: '1400px', // Position at Palm Jumeirah (current stop)
+                          left: '950px', // Position at Palm Jumeirah (current stop)
                           width: '32px',
                           height: '32px',
                           display: 'flex',
@@ -761,7 +761,7 @@ function App() {
                         </div>
                       </div>
                       
-                      {/* Route Stops - All 25 stops with wider spacing */}
+                      {/* Route Stops - All 25 stops with uniform spacing */}
                       {[
                         { name: 'Dubai Mall', position: 50, isTransfer: true, transferRoutes: ['F11', 'F12', 'F15'], isCurrent: false },
                         { name: 'Burj Khalifa', position: 200, isTransfer: false, isCurrent: false },
@@ -769,25 +769,25 @@ function App() {
                         { name: 'Business Bay', position: 500, isTransfer: false, isCurrent: false },
                         { name: 'Dubai Marina', position: 650, isTransfer: true, transferRoutes: ['F25', 'F30', 'F35'], isCurrent: false },
                         { name: 'JBR', position: 800, isTransfer: false, isCurrent: false },
-                        { name: 'Palm Jumeirah', position: 1400, isTransfer: true, transferRoutes: ['F35', 'F40', 'F45'], isCurrent: true }, // Current stop
-                        { name: 'Dubai Hills', position: 1550, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Sports City', position: 1700, isTransfer: true, transferRoutes: ['F45', 'F50', 'F55'], isCurrent: false },
-                        { name: 'Dubai Investment Park', position: 1850, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Silicon Oasis', position: 2000, isTransfer: true, transferRoutes: ['F55', 'F60', 'F65'], isCurrent: false },
-                        { name: 'Dubai International City', position: 2150, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Festival City', position: 2300, isTransfer: true, transferRoutes: ['F65', 'F70', 'F75'], isCurrent: false },
-                        { name: 'Dubai Healthcare City', position: 2450, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Creek', position: 2600, isTransfer: true, transferRoutes: ['F75', 'F80', 'F85'], isCurrent: false },
-                        { name: 'Dubai Gold Souk', position: 2750, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Spice Souk', position: 2900, isTransfer: true, transferRoutes: ['F85', 'F90', 'F95'], isCurrent: false },
-                        { name: 'Dubai Fish Market', position: 3050, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Port', position: 3200, isTransfer: true, transferRoutes: ['F95', 'F100', 'F105'], isCurrent: false },
-                        { name: 'Dubai Airport', position: 3350, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Cargo Village', position: 3500, isTransfer: true, transferRoutes: ['F105', 'F110', 'F115'], isCurrent: false },
-                        { name: 'Dubai Logistics City', position: 3650, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai World Central', position: 3800, isTransfer: true, transferRoutes: ['F115', 'F120', 'F125'], isCurrent: false },
-                        { name: 'Dubai South', position: 3950, isTransfer: false, isCurrent: false },
-                        { name: 'JBR Beach', position: 3950, isTransfer: false, isCurrent: false }
+                        { name: 'Palm Jumeirah', position: 950, isTransfer: true, transferRoutes: ['F35', 'F40', 'F45'], isCurrent: true }, // Current stop
+                        { name: 'Dubai Hills', position: 1100, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Sports City', position: 1250, isTransfer: true, transferRoutes: ['F45', 'F50', 'F55'], isCurrent: false },
+                        { name: 'Dubai Investment Park', position: 1400, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Silicon Oasis', position: 1550, isTransfer: true, transferRoutes: ['F55', 'F60', 'F65'], isCurrent: false },
+                        { name: 'Dubai International City', position: 1700, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Festival City', position: 1850, isTransfer: true, transferRoutes: ['F65', 'F70', 'F75'], isCurrent: false },
+                        { name: 'Dubai Healthcare City', position: 2000, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Creek', position: 2150, isTransfer: true, transferRoutes: ['F75', 'F80', 'F85'], isCurrent: false },
+                        { name: 'Dubai Gold Souk', position: 2300, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Spice Souk', position: 2450, isTransfer: true, transferRoutes: ['F85', 'F90', 'F95'], isCurrent: false },
+                        { name: 'Dubai Fish Market', position: 2600, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Port', position: 2750, isTransfer: true, transferRoutes: ['F95', 'F100', 'F105'], isCurrent: false },
+                        { name: 'Dubai Airport', position: 2900, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Cargo Village', position: 3050, isTransfer: true, transferRoutes: ['F105', 'F110', 'F115'], isCurrent: false },
+                        { name: 'Dubai Logistics City', position: 3200, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai World Central', position: 3350, isTransfer: true, transferRoutes: ['F115', 'F120', 'F125'], isCurrent: false },
+                        { name: 'Dubai South', position: 3500, isTransfer: false, isCurrent: false },
+                        { name: 'JBR Beach', position: 3650, isTransfer: false, isCurrent: false }
                       ].map((stop, index) => (
                         <div key={index} style={{
                           position: 'absolute',
@@ -812,20 +812,24 @@ function App() {
                             top: '0px' // On the route line
                           }}></div>
                           
-                          {/* Stop Name - Below the point */}
+                          {/* Stop Name - Vertical text below the point */}
                           <div style={{
                             fontSize: '10px',
                             color: stop.isCurrent ? 'var(--success)' : 'var(--text-primary)',
                             fontWeight: stop.isCurrent ? 'bold' : 'normal',
                             marginTop: '12px',
                             backgroundColor: 'rgba(255,255,255,0.95)',
-                            padding: '4px 6px',
+                            padding: '4px 2px',
                             borderRadius: '4px',
                             border: stop.isCurrent ? '2px solid var(--success)' : '1px solid var(--border-light)',
+                            writingMode: 'vertical-rl',
+                            textOrientation: 'mixed',
                             whiteSpace: 'nowrap',
-                            maxWidth: '80px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
+                            minHeight: '60px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            maxWidth: '60px'
                           }}>
                             {stop.name}
                           </div>
