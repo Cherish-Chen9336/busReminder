@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/busReminder/icon-placeholder.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dubai Bus Buddy - Real-time Transit Information</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Real-time bus information reminder app, helping you stay updated on bus arrival times" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Bus Buddy" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/busReminder/manifest.json" />
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="/busReminder/icon-placeholder.svg" />
+    <link rel="icon" type="image/svg+xml" href="/busReminder/icon-placeholder.svg" />
+    
+    <!-- Preconnect to external domains for better performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://dxjaxszouwvmffeujpkx.supabase.co" />
+    
+    <!-- Content Security Policy - Allow Supabase connections -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: https:;
+      connect-src 'self' https://dxjaxszouwvmffeujpkx.supabase.co https://*.supabase.co;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    " />
+    
+    <!-- PWA Meta Tags for iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Bus Buddy" />
+    
+    <!-- PWA Meta Tags for Windows -->
+    <meta name="msapplication-TileColor" content="#2563eb" />
+    <meta name="msapplication-TileImage" content="/busReminder/icon-placeholder.svg" />
+    
+    <!-- PWA Meta Tags for Android -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Bus Buddy" />
+    <script type="module" crossorigin src="/busReminder/assets/index-BQB51gy2.js"></script>
+    <link rel="stylesheet" crossorigin href="/busReminder/assets/index-BIVKXRDC.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
