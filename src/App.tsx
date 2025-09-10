@@ -22,6 +22,8 @@ interface Departure {
   direction: 'TO_DUBAI' | 'TO_ABU_DHABI' | 'TO_SHARJAH'
   platform?: string
   status?: 'ON_TIME' | 'DELAYED' | 'EARLY'
+  currentStop?: string
+  nextStop?: string
 }
 
 // Mock data removed - now using Supabase RPC calls
@@ -274,10 +276,17 @@ function App() {
           status: dep.status || 'ON_TIME',
           direction: dep.direction || dep.trip_direction || 'Unknown',
           platform: dep.platform || dep.platform_number || dep.stop_platform || 'Unknown',
-          realtime: dep.realtime || dep.is_realtime || false
+          realtime: dep.realtime || dep.is_realtime || false,
+          currentStop: dep.current_stop || dep.current_stop_name || dep.last_stop || 'Unknown',
+          nextStop: dep.next_stop || dep.next_stop_name || 'Unknown'
         }))
+        
+        // Filter to show only departures within next 2 hours (120 minutes)
+        const filteredDepartures = mappedDepartures.filter(dep => dep.etaMin <= 120)
+        
         console.log('Mapped departures:', mappedDepartures)
-        setDepartures(mappedDepartures)
+        console.log('Filtered departures (next 2 hours):', filteredDepartures)
+        setDepartures(filteredDepartures)
       } else {
         console.log('No departures found for this stop')
         setDepartures([])
@@ -633,6 +642,18 @@ function App() {
 
               {/* All Bus Departures from Closest Stop */}
               {departures.length > 0 ? (
+                <div>
+                  <div style={{ 
+                    marginBottom: '16px', 
+                    padding: '12px', 
+                    backgroundColor: 'var(--info)', 
+                    color: 'white', 
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    textAlign: 'center'
+                  }}>
+                    📍 Showing next 2 hours of departures from this stop
+                  </div>
               <div className="bus-grid">
                   {departures.map((dep, index) => (
                   <div key={index} className="bus-card">
@@ -652,11 +673,16 @@ function App() {
                     
                     <div style={{ marginBottom: '12px' }}>
                       <div style={{ color: 'var(--text-primary)', fontWeight: 'bold', marginBottom: '4px' }}>
-                        {dep.headsign}
+                          To: {dep.headsign}
                       </div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '4px' }}>
                         {getDirectionLabel(dep.direction)} • Platform {dep.platform}
                       </div>
+                        {(dep as any).currentStop && (dep as any).currentStop !== 'Unknown' && (
+                          <div style={{ color: 'var(--info)', fontSize: '12px', fontStyle: 'italic' }}>
+                            Currently at: {(dep as any).currentStop}
+                          </div>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -677,6 +703,7 @@ function App() {
                   </div>
                 ))}
               </div>
+                </div>
               ) : (
                 <div style={{ 
                   textAlign: 'center', 
