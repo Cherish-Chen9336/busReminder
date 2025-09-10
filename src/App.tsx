@@ -945,7 +945,7 @@ function App() {
                             {stop.name}
                           </div>
                           
-                          {/* Transfer Info - To the right of station name, rotated 90 degrees left */}
+                          {/* Transfer Info - To the right of station name, vertical layout */}
                           {stop.isTransfer && stop.transferRoutes && (
                             <div style={{
                               fontSize: '8px',
@@ -953,23 +953,28 @@ function App() {
                               marginTop: '25px', // Same level as station name
                               backgroundColor: 'var(--warning)',
                               color: 'white',
-                              padding: '2px 4px',
+                              padding: '4px 2px',
                               borderRadius: '3px',
                               display: 'flex',
-                              gap: '2px',
-                              flexWrap: 'wrap',
+                              flexDirection: 'column', // Vertical layout
+                              gap: '1px',
+                              alignItems: 'center',
                               justifyContent: 'center',
                               position: 'absolute',
                               top: '50%',
                               left: '50%',
-                              transform: 'translate(30px, 0) rotate(-90deg)', // Move right and rotate 90 degrees left
+                              transform: 'translate(30px, 0)', // Move to the right of station name
                               zIndex: 4,
-                              maxWidth: '60px',
-                              writingMode: 'horizontal-tb', // Horizontal text mode
-                              textOrientation: 'upright' // Keep text upright after rotation
+                              maxWidth: '30px',
+                              minHeight: '60px'
                             }}>
                               {stop.transferRoutes.map((route, routeIndex) => (
-                                <span key={routeIndex}>{route}</span>
+                                <div key={routeIndex} style={{
+                                  textAlign: 'center',
+                                  lineHeight: '1.2'
+                                }}>
+                                  {route}
+                                </div>
                               ))}
                             </div>
                           )}
