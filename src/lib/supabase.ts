@@ -13,7 +13,7 @@ async function callSupabaseRPC<T>(functionName: string, params: any = {}, retrie
       
       // Create AbortController for timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
       
       const response = await fetch(url, {
         method: 'POST',
@@ -21,10 +21,13 @@ async function callSupabaseRPC<T>(functionName: string, params: any = {}, retrie
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Prefer': 'return=minimal'
         },
         body: JSON.stringify(params),
-        signal: controller.signal
+        signal: controller.signal,
+        mode: 'cors',
+        cache: 'no-cache'
       })
 
       clearTimeout(timeoutId)
@@ -36,8 +39,8 @@ async function callSupabaseRPC<T>(functionName: string, params: any = {}, retrie
         
         // If it's a server error (5xx) and we have retries left, retry
         if (response.status >= 500 && attempt < retries) {
-          console.log(`Server error, retrying in ${attempt * 1000}ms...`)
-          await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+          console.log(`Server error, retrying in ${attempt * 2000}ms...`)
+          await new Promise(resolve => setTimeout(resolve, attempt * 2000))
           continue
         }
         
@@ -54,16 +57,22 @@ async function callSupabaseRPC<T>(functionName: string, params: any = {}, retrie
       // If it's the last attempt or not a network error, throw
       if (attempt === retries || (error as Error).name === 'AbortError') {
         if ((error as Error).name === 'AbortError') {
-          throw new Error(`Request timeout after 10 seconds. Please check your connection and try again.`)
+          throw new Error(`Request timeout after 15 seconds. Please check your connection and try again.`)
         }
         if ((error as Error).message.includes('ERR_CONNECTION_RESET') || (error as Error).message.includes('Failed to fetch')) {
-          throw new Error(`Connection failed. Please try refreshing the page or using incognito mode. If the problem persists, try disabling browser extensions.`)
+          throw new Error(`Connection failed. This might be due to network issues or browser extensions. Please try:
+1. Refreshing the page
+2. Using incognito/private mode
+3. Disabling browser extensions
+4. Checking your internet connection`)
         }
         throw error
       }
       
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+      // Wait before retry with exponential backoff
+      const delay = Math.min(attempt * 2000, 10000) // Max 10 seconds
+      console.log(`Waiting ${delay}ms before retry...`)
+      await new Promise(resolve => setTimeout(resolve, delay))
     }
   }
   
@@ -85,6 +94,13 @@ export async function healthCheck() {
       lon: DUBAI_CENTER.lon, 
       radius_m: 1000 
     })
+    console.log('Health check result:', result)
+    console.log('Health check result type:', typeof result)
+    console.log('Health check result length:', Array.isArray(result) ? result.length : 'Not an array')
+    if (Array.isArray(result) && result.length > 0) {
+      console.log('First stop in health check:', result[0])
+      console.log('First stop ID:', result[0]?.id)
+    }
     return {
       success: true,
       data: result,

@@ -68,6 +68,7 @@ function App() {
   const [healthStatus, setHealthStatus] = useState<{success: boolean, message: string, data?: any, error?: string} | null>(null)
   const [isHealthChecking, setIsHealthChecking] = useState(false)
   const [useDubaiCenter, setUseDubaiCenter] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'failed' | 'idle'>('idle')
 
   // Get user location with fallback to Dubai center
   const getCurrentLocation = () => {
@@ -89,15 +90,19 @@ function App() {
           let errorMessage = 'Unable to get location information'
           switch(error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Using Dubai center as fallback. Click "Use Dubai Center" to continue.'
+              errorMessage = 'Location access denied. Click "Use Dubai Center" to continue with Dubai center coordinates.'
               setUseDubaiCenter(true)
+              // Automatically use Dubai center if permission is denied
+              setTimeout(() => {
+                useDubaiCenterLocation()
+              }, 2000)
               break
             case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Using Dubai center as fallback.'
+              errorMessage = 'Location information is unavailable. Click "Use Dubai Center" to continue.'
               setUseDubaiCenter(true)
               break
             case error.TIMEOUT:
-              errorMessage = 'Location request timed out. Using Dubai center as fallback.'
+              errorMessage = 'Location request timed out. Click "Use Dubai Center" to continue.'
               setUseDubaiCenter(true)
               break
           }
@@ -105,14 +110,18 @@ function App() {
           setIsLoading(false)
         },
         {
-          enableHighAccuracy: true,
-          timeout: 15000,
+          enableHighAccuracy: false, // Reduce accuracy requirements
+          timeout: 10000, // Reduce timeout
           maximumAge: 300000
         }
       )
     } else {
       setError('Geolocation is not supported by this browser. Using Dubai center as fallback.')
       setUseDubaiCenter(true)
+      // Automatically use Dubai center if geolocation is not supported
+      setTimeout(() => {
+        useDubaiCenterLocation()
+      }, 1000)
     }
   }
 
@@ -169,27 +178,38 @@ function App() {
     
     setIsLoading(true)
     setError(null)
+    setConnectionStatus('connecting')
     
     try {
       console.log('Loading nearby stops for location:', userLocation)
       const stops = await getNearbyStops(userLocation.lat, userLocation.lon, 1000) as Stop[]
       console.log('Nearby stops received:', stops)
       setNearbyStops(stops)
+      setConnectionStatus('connected')
       
       // Set closest stop
       if (stops.length > 0) {
+        console.log('All stops received:', stops)
         const closest = stops.reduce((prev: Stop, current: Stop) => 
           (prev.distance || 0) < (current.distance || 0) ? prev : current
         )
-        console.log('Closest stop:', closest)
-        setClosestStop(closest)
-        loadDepartures(closest.id)
+        console.log('Closest stop details:', closest)
+        console.log('Closest stop ID:', closest.id)
+        
+        if (closest.id) {
+          setClosestStop(closest)
+          loadDepartures(closest.id)
+        } else {
+          console.error('Closest stop has no ID:', closest)
+          setError('Invalid stop data received from server')
+        }
       } else {
         console.log('No nearby stops found')
         setError('No bus stops found nearby')
       }
     } catch (err) {
       console.error('Error loading nearby stops:', err)
+      setConnectionStatus('failed')
       setError(`Failed to load nearby stops: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
@@ -198,6 +218,11 @@ function App() {
 
   // Load departures for a specific stop
   const loadDepartures = async (stopId: string) => {
+    if (!stopId) {
+      console.error('Cannot load departures: stopId is undefined or empty')
+      return
+    }
+    
     try {
       console.log('Loading departures for stop:', stopId)
       const now = new Date().toISOString()
@@ -215,7 +240,7 @@ function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       setLastUpdate(new Date())
-      if (closestStop) {
+      if (closestStop && closestStop.id) {
         loadDepartures(closestStop.id)
       }
     }, 30000) // Update every 30 seconds
@@ -349,9 +374,25 @@ function App() {
         right: 0, 
         zIndex: 1000,
         borderRadius: 0,
-        justifyContent: 'center'
+        justifyContent: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
       }}>
-        🚌 LIVE - Last updated: {lastUpdate.toLocaleString()}
+        <span>🚌 LIVE - Last updated: {lastUpdate.toLocaleString()}</span>
+        <span style={{ 
+          padding: '2px 8px', 
+          borderRadius: '12px', 
+          fontSize: '12px',
+          backgroundColor: connectionStatus === 'connected' ? 'var(--success)' : 
+                          connectionStatus === 'connecting' ? 'var(--warning)' : 
+                          connectionStatus === 'failed' ? 'var(--danger)' : 'var(--text-muted)',
+          color: 'white'
+        }}>
+          {connectionStatus === 'connected' ? '🟢 Connected' : 
+           connectionStatus === 'connecting' ? '🟡 Connecting...' : 
+           connectionStatus === 'failed' ? '🔴 Connection Failed' : '⚪ Idle'}
+        </span>
       </div>
 
       {/* Main Content */}
