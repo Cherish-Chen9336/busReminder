@@ -241,9 +241,30 @@ function App() {
       console.log('Loading departures for stop:', stopId)
       const now = new Date().toISOString()
       console.log('Request time:', now)
-      const deps = await getDepartures(stopId, now, 20) as Departure[]
-      console.log('Departures received:', deps)
-      setDepartures(deps)
+      const deps = await getDepartures(stopId, now, 20) as any[]
+      console.log('Raw departures received:', deps)
+      console.log('Departures type:', typeof deps)
+      console.log('Departures length:', Array.isArray(deps) ? deps.length : 'Not an array')
+      
+      if (Array.isArray(deps) && deps.length > 0) {
+        console.log('First departure:', deps[0])
+        // Map the data to our Departure interface if needed
+        const mappedDepartures = deps.map((dep: any) => ({
+          route: dep.route || dep.route_number || 'Unknown',
+          headsign: dep.headsign || dep.destination || dep.headsign_text || 'Unknown Destination',
+          etaMin: dep.eta_min || dep.eta || 0,
+          scheduled: dep.scheduled || dep.scheduled_time || 'Unknown',
+          status: dep.status || 'ON_TIME',
+          direction: dep.direction || 'Unknown',
+          platform: dep.platform || dep.platform_number || 'Unknown',
+          realtime: dep.realtime || false
+        }))
+        console.log('Mapped departures:', mappedDepartures)
+        setDepartures(mappedDepartures)
+      } else {
+        console.log('No departures found for this stop')
+        setDepartures([])
+      }
     } catch (err) {
       console.error('Error loading departures:', err)
       setError(`Failed to load departure times: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -573,8 +594,9 @@ function App() {
               </div>
 
               {/* All Bus Departures from Closest Stop */}
+              {departures.length > 0 ? (
               <div className="bus-grid">
-                {departures.map((dep, index) => (
+                  {departures.map((dep, index) => (
                   <div key={index} className="bus-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div className="route-badge">
@@ -617,6 +639,23 @@ function App() {
                   </div>
                 ))}
               </div>
+              ) : (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '40px 20px',
+                  color: 'var(--text-muted)'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚌</div>
+                  <h3 style={{ color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
+                    No Bus Departures Found
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    No buses are currently scheduled to depart from this stop.
+                    <br />
+                    Try refreshing or check back later.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

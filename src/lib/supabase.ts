@@ -99,7 +99,18 @@ export async function healthCheck() {
     console.log('Health check result length:', Array.isArray(result) ? result.length : 'Not an array')
     if (Array.isArray(result) && result.length > 0) {
       console.log('First stop in health check:', result[0])
-      console.log('First stop ID:', result[0]?.id)
+      console.log('First stop ID:', result[0]?.stop_id)
+      
+      // Test departures for the first stop
+      if (result[0]?.stop_id) {
+        console.log('Testing departures for stop:', result[0].stop_id)
+        const departuresResult = await callSupabaseRPC('departures', {
+          limit_n: 5,
+          p_at: new Date().toISOString(),
+          p_stop_id: result[0].stop_id
+        })
+        console.log('Departures test result:', departuresResult)
+      }
     }
     return {
       success: true,
