@@ -735,27 +735,29 @@ function App() {
                       display: 'flex',
                       alignItems: 'center'
                     }}>
-                      {/* Horizontal Route Line */}
+                      {/* Horizontal Route Line - From first to last stop */}
                       <div style={{
-                        width: '100%',
+                        width: '3600px', // From 50px (first stop) to 3650px (last stop)
                         height: '4px',
                         backgroundColor: 'var(--primary-blue)',
                         position: 'absolute',
                         top: '50%',
+                        left: '50px', // Start at first stop position
                         transform: 'translateY(-50%)'
                       }}>
                         {/* Bus Position Indicator - Static at current stop */}
                         <div style={{
                           position: 'absolute',
                           top: '-20px',
-                          left: '950px', // Position at Palm Jumeirah (current stop)
+                          left: '900px', // Position at Palm Jumeirah (950px - 50px offset)
                           width: '32px',
                           height: '32px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '24px',
-                          zIndex: 10
+                          zIndex: 10,
+                          transform: 'scaleX(-1)' // Flip 180 degrees to face destination
                         }}>
                           🚌
                         </div>
@@ -873,8 +875,8 @@ function App() {
                   </div>
                 </div>
 
-                {/* Route Legend */}
-                <div style={{ marginTop: '20px', padding: '12px', backgroundColor: 'var(--light-gray)', borderRadius: '8px' }}>
+                {/* Route Legend - Moved down */}
+                <div style={{ marginTop: '200px', padding: '12px', backgroundColor: 'var(--light-gray)', borderRadius: '8px' }}>
                   <h4 style={{ margin: '0 0 12px 0', color: 'var(--primary-blue)', fontSize: '14px' }}>
                     Route Map Legend
                   </h4>
@@ -898,7 +900,7 @@ function App() {
                   </div>
                 </div>
 
-                {/* Route Information */}
+                {/* Route Information - Moved down */}
                 <div style={{ marginTop: '20px' }}>
                   <h4 style={{ margin: '0 0 12px 0', color: 'var(--primary-blue)' }}>
                     Route Information
@@ -993,32 +995,6 @@ function App() {
                     📍 Showing next 2 hours of departures from this stop
                   </div>
                   
-                  {/* All Bus Routes Passing This Stop */}
-                  <div style={{ 
-                    marginBottom: '16px', 
-                    padding: '12px', 
-                    backgroundColor: 'var(--light-gray)', 
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}>
-                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--primary-blue)', fontSize: '14px' }}>
-                      All Bus Routes Passing This Stop:
-                    </h4>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {['F11', 'F12', 'F15', 'F20', 'F25', 'F30', 'F35', 'F40', 'F45', 'F50', 'F55', 'F60', 'F65', 'F70', 'F75', 'F80', 'F85', 'F90', 'F95', 'F100', 'F105', 'F110', 'F115', 'F120', 'F125'].map((route, index) => (
-                        <span key={index} style={{
-                          backgroundColor: 'var(--primary-blue)',
-                          color: 'white',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 'bold'
-                        }}>
-                          {route}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
               <div className="bus-grid">
                   {departures.map((route, index) => (
                   <div 
