@@ -797,7 +797,7 @@ function App() {
                           textAlign: 'center',
                           zIndex: stop.isCurrent ? 10 : 5
                         }}>
-                          {/* Stop Marker - On the route line */}
+                          {/* Stop Marker - Exactly on the route line */}
                           <div style={{
                             width: stop.isCurrent ? '16px' : '12px',
                             height: stop.isCurrent ? '16px' : '12px',
@@ -808,16 +808,19 @@ function App() {
                             border: stop.isCurrent ? '3px solid white' : '2px solid white',
                             boxShadow: stop.isCurrent ? '0 4px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
                             animation: stop.isCurrent ? 'pulse 2s infinite' : 'none',
-                            position: 'relative',
-                            top: '0px' // On the route line
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 6
                           }}></div>
                           
-                          {/* Stop Name - Vertical text below the point */}
+                          {/* Stop Name - Vertical text below the route line */}
                           <div style={{
                             fontSize: '10px',
                             color: stop.isCurrent ? 'var(--success)' : 'var(--text-primary)',
                             fontWeight: stop.isCurrent ? 'bold' : 'normal',
-                            marginTop: '12px',
+                            marginTop: '20px', // Move further down to avoid bus icon
                             backgroundColor: 'rgba(255,255,255,0.95)',
                             padding: '4px 2px',
                             borderRadius: '4px',
@@ -829,7 +832,12 @@ function App() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            maxWidth: '60px'
+                            maxWidth: '60px',
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, 0)',
+                            zIndex: 4
                           }}>
                             {stop.name}
                           </div>
@@ -839,7 +847,7 @@ function App() {
                             <div style={{
                               fontSize: '8px',
                               fontWeight: 'bold',
-                              marginTop: '4px',
+                              marginTop: '85px', // Position below the stop name
                               backgroundColor: 'var(--warning)',
                               color: 'white',
                               padding: '2px 4px',
@@ -847,7 +855,12 @@ function App() {
                               display: 'flex',
                               gap: '2px',
                               flexWrap: 'wrap',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, 0)',
+                              zIndex: 4
                             }}>
                               {stop.transferRoutes.map((route, routeIndex) => (
                                 <span key={routeIndex}>{route}</span>
