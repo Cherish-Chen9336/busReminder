@@ -687,6 +687,13 @@ function App() {
                   <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
                     To: {selectedRoute.headsign}
                   </p>
+                  <div style={{ marginTop: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>Dubai Mall</span>
+                    <span style={{ margin: '0 8px' }}>→</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>25 stops</span>
+                    <span style={{ margin: '0 8px' }}>→</span>
+                    <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>JBR Beach</span>
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowRouteDetail(false)}
@@ -700,37 +707,6 @@ function App() {
                 >
                   ✕
                 </button>
-              </div>
-
-              {/* Start and End Station Info */}
-              <div style={{
-                padding: '16px 20px',
-                backgroundColor: 'var(--light-gray)',
-                borderBottom: '1px solid var(--border-light)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ textAlign: 'center', flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>START</div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--success)' }}>Dubai Mall</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Terminal Station</div>
-                  </div>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    color: 'var(--text-muted)',
-                    fontSize: '12px'
-                  }}>
-                    <span>→</span>
-                    <span>25 stops</span>
-                    <span>→</span>
-                  </div>
-                  <div style={{ textAlign: 'center', flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>END</div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>JBR Beach</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Terminal Station</div>
-                  </div>
-                </div>
               </div>
 
               {/* Route Map */}
@@ -753,7 +729,7 @@ function App() {
                     padding: '20px 0'
                   }}>
                     <div style={{
-                      width: '2000px',
+                      width: '3000px',
                       height: '100%',
                       position: 'relative',
                       display: 'flex',
@@ -768,35 +744,49 @@ function App() {
                         top: '50%',
                         transform: 'translateY(-50%)'
                       }}>
-                        {/* Bus Position Indicator */}
+                        {/* Bus Position Indicator - Static at current stop */}
                         <div style={{
                           position: 'absolute',
                           top: '-16px',
-                          left: '300px', // Fixed position based on current stop
+                          left: '350px', // Position at Business Bay (current stop)
                           width: '32px',
                           height: '32px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '24px',
-                          animation: 'busMoveHorizontal 4s ease-in-out infinite'
+                          fontSize: '24px'
                         }}>
                           🚌
                         </div>
                       </div>
                       
-                      {/* Route Stops */}
+                      {/* Route Stops - All 25 stops */}
                       {[
-                        { name: 'Dubai Mall', position: 50, isTransfer: true, transferRoutes: ['F11', 'F12'], isCurrent: false },
-                        { name: 'Burj Khalifa', position: 150, isTransfer: false, isCurrent: false },
-                        { name: 'Downtown Dubai', position: 250, isTransfer: true, transferRoutes: ['F15', 'F20'], isCurrent: false },
-                        { name: 'Business Bay', position: 350, isTransfer: false, isCurrent: true }, // Current stop
-                        { name: 'Dubai Marina', position: 450, isTransfer: true, transferRoutes: ['F25', 'F30'], isCurrent: false },
-                        { name: 'JBR', position: 550, isTransfer: false, isCurrent: false },
-                        { name: 'Palm Jumeirah', position: 650, isTransfer: true, transferRoutes: ['F35', 'F40'], isCurrent: false },
-                        { name: 'Dubai Hills', position: 750, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Sports City', position: 850, isTransfer: true, transferRoutes: ['F45', 'F50'], isCurrent: false },
-                        { name: 'JBR Beach', position: 950, isTransfer: false, isCurrent: false }
+                        { name: 'Dubai Mall', position: 50, isTransfer: true, transferRoutes: ['F11', 'F12', 'F15'], isCurrent: false },
+                        { name: 'Burj Khalifa', position: 100, isTransfer: false, isCurrent: false },
+                        { name: 'Downtown Dubai', position: 150, isTransfer: true, transferRoutes: ['F15', 'F20', 'F25'], isCurrent: false },
+                        { name: 'Business Bay', position: 200, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Marina', position: 250, isTransfer: true, transferRoutes: ['F25', 'F30', 'F35'], isCurrent: false },
+                        { name: 'JBR', position: 300, isTransfer: false, isCurrent: false },
+                        { name: 'Palm Jumeirah', position: 350, isTransfer: true, transferRoutes: ['F35', 'F40', 'F45'], isCurrent: true }, // Current stop
+                        { name: 'Dubai Hills', position: 400, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Sports City', position: 450, isTransfer: true, transferRoutes: ['F45', 'F50', 'F55'], isCurrent: false },
+                        { name: 'Dubai Investment Park', position: 500, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Silicon Oasis', position: 550, isTransfer: true, transferRoutes: ['F55', 'F60', 'F65'], isCurrent: false },
+                        { name: 'Dubai International City', position: 600, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Festival City', position: 650, isTransfer: true, transferRoutes: ['F65', 'F70', 'F75'], isCurrent: false },
+                        { name: 'Dubai Healthcare City', position: 700, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Creek', position: 750, isTransfer: true, transferRoutes: ['F75', 'F80', 'F85'], isCurrent: false },
+                        { name: 'Dubai Gold Souk', position: 800, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Spice Souk', position: 850, isTransfer: true, transferRoutes: ['F85', 'F90', 'F95'], isCurrent: false },
+                        { name: 'Dubai Fish Market', position: 900, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Port', position: 950, isTransfer: true, transferRoutes: ['F95', 'F100', 'F105'], isCurrent: false },
+                        { name: 'Dubai Airport', position: 1000, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Cargo Village', position: 1050, isTransfer: true, transferRoutes: ['F105', 'F110', 'F115'], isCurrent: false },
+                        { name: 'Dubai Logistics City', position: 1100, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai World Central', position: 1150, isTransfer: true, transferRoutes: ['F115', 'F120', 'F125'], isCurrent: false },
+                        { name: 'Dubai South', position: 1200, isTransfer: false, isCurrent: false },
+                        { name: 'JBR Beach', position: 1250, isTransfer: false, isCurrent: false }
                       ].map((stop, index) => (
                         <div key={index} style={{
                           position: 'absolute',
@@ -989,6 +979,33 @@ function App() {
                     textAlign: 'center'
                   }}>
                     📍 Showing next 2 hours of departures from this stop
+                  </div>
+                  
+                  {/* All Bus Routes Passing This Stop */}
+                  <div style={{ 
+                    marginBottom: '16px', 
+                    padding: '12px', 
+                    backgroundColor: 'var(--light-gray)', 
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}>
+                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--primary-blue)', fontSize: '14px' }}>
+                      All Bus Routes Passing This Stop:
+                    </h4>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {['F11', 'F12', 'F15', 'F20', 'F25', 'F30', 'F35', 'F40', 'F45', 'F50', 'F55', 'F60', 'F65', 'F70', 'F75', 'F80', 'F85', 'F90', 'F95', 'F100', 'F105', 'F110', 'F115', 'F120', 'F125'].map((route, index) => (
+                        <span key={index} style={{
+                          backgroundColor: 'var(--primary-blue)',
+                          color: 'white',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          {route}
+                        </span>
+                      ))}
+                    </div>
                   </div>
               <div className="bus-grid">
                   {departures.map((route, index) => (
