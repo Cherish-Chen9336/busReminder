@@ -945,7 +945,7 @@ function App() {
                             {stop.name}
                           </div>
                           
-                          {/* Transfer Info - To the right of station name */}
+                          {/* Transfer Info - To the right of station name, rotated 90 degrees left */}
                           {stop.isTransfer && stop.transferRoutes && (
                             <div style={{
                               fontSize: '8px',
@@ -962,11 +962,11 @@ function App() {
                               position: 'absolute',
                               top: '50%',
                               left: '50%',
-                              transform: 'translate(30px, 0)', // Move to the right of station name
+                              transform: 'translate(30px, 0) rotate(-90deg)', // Move right and rotate 90 degrees left
                               zIndex: 4,
                               maxWidth: '60px',
-                              writingMode: 'vertical-rl',
-                              textOrientation: 'mixed'
+                              writingMode: 'horizontal-tb', // Horizontal text mode
+                              textOrientation: 'upright' // Keep text upright after rotation
                             }}>
                               {stop.transferRoutes.map((route, routeIndex) => (
                                 <span key={routeIndex}>{route}</span>
