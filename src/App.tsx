@@ -945,12 +945,12 @@ function App() {
                             {stop.name}
                           </div>
                           
-                          {/* Transfer Info - Below the name with more spacing */}
+                          {/* Transfer Info - To the right of station name */}
                           {stop.isTransfer && stop.transferRoutes && (
                             <div style={{
                               fontSize: '8px',
                               fontWeight: 'bold',
-                              marginTop: '100px', // Position further below the stop name
+                              marginTop: '25px', // Same level as station name
                               backgroundColor: 'var(--warning)',
                               color: 'white',
                               padding: '2px 4px',
@@ -962,9 +962,11 @@ function App() {
                               position: 'absolute',
                               top: '50%',
                               left: '50%',
-                              transform: 'translate(-50%, 0)',
+                              transform: 'translate(30px, 0)', // Move to the right of station name
                               zIndex: 4,
-                              maxWidth: '80px'
+                              maxWidth: '60px',
+                              writingMode: 'vertical-rl',
+                              textOrientation: 'mixed'
                             }}>
                               {stop.transferRoutes.map((route, routeIndex) => (
                                 <span key={routeIndex}>{route}</span>
