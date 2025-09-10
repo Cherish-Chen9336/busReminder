@@ -729,8 +729,8 @@ function App() {
                     padding: '20px 0'
                   }}>
                     <div style={{
-                      width: '3000px',
-                      height: '100%',
+                      width: '4000px',
+                      height: '120px',
                       position: 'relative',
                       display: 'flex',
                       alignItems: 'center'
@@ -747,46 +747,47 @@ function App() {
                         {/* Bus Position Indicator - Static at current stop */}
                         <div style={{
                           position: 'absolute',
-                          top: '-16px',
-                          left: '350px', // Position at Business Bay (current stop)
+                          top: '-20px',
+                          left: '1400px', // Position at Palm Jumeirah (current stop)
                           width: '32px',
                           height: '32px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '24px'
+                          fontSize: '24px',
+                          zIndex: 10
                         }}>
                           🚌
                         </div>
                       </div>
                       
-                      {/* Route Stops - All 25 stops */}
+                      {/* Route Stops - All 25 stops with wider spacing */}
                       {[
                         { name: 'Dubai Mall', position: 50, isTransfer: true, transferRoutes: ['F11', 'F12', 'F15'], isCurrent: false },
-                        { name: 'Burj Khalifa', position: 100, isTransfer: false, isCurrent: false },
-                        { name: 'Downtown Dubai', position: 150, isTransfer: true, transferRoutes: ['F15', 'F20', 'F25'], isCurrent: false },
-                        { name: 'Business Bay', position: 200, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Marina', position: 250, isTransfer: true, transferRoutes: ['F25', 'F30', 'F35'], isCurrent: false },
-                        { name: 'JBR', position: 300, isTransfer: false, isCurrent: false },
-                        { name: 'Palm Jumeirah', position: 350, isTransfer: true, transferRoutes: ['F35', 'F40', 'F45'], isCurrent: true }, // Current stop
-                        { name: 'Dubai Hills', position: 400, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Sports City', position: 450, isTransfer: true, transferRoutes: ['F45', 'F50', 'F55'], isCurrent: false },
-                        { name: 'Dubai Investment Park', position: 500, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Silicon Oasis', position: 550, isTransfer: true, transferRoutes: ['F55', 'F60', 'F65'], isCurrent: false },
-                        { name: 'Dubai International City', position: 600, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Festival City', position: 650, isTransfer: true, transferRoutes: ['F65', 'F70', 'F75'], isCurrent: false },
-                        { name: 'Dubai Healthcare City', position: 700, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Creek', position: 750, isTransfer: true, transferRoutes: ['F75', 'F80', 'F85'], isCurrent: false },
-                        { name: 'Dubai Gold Souk', position: 800, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Spice Souk', position: 850, isTransfer: true, transferRoutes: ['F85', 'F90', 'F95'], isCurrent: false },
-                        { name: 'Dubai Fish Market', position: 900, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Port', position: 950, isTransfer: true, transferRoutes: ['F95', 'F100', 'F105'], isCurrent: false },
-                        { name: 'Dubai Airport', position: 1000, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai Cargo Village', position: 1050, isTransfer: true, transferRoutes: ['F105', 'F110', 'F115'], isCurrent: false },
-                        { name: 'Dubai Logistics City', position: 1100, isTransfer: false, isCurrent: false },
-                        { name: 'Dubai World Central', position: 1150, isTransfer: true, transferRoutes: ['F115', 'F120', 'F125'], isCurrent: false },
-                        { name: 'Dubai South', position: 1200, isTransfer: false, isCurrent: false },
-                        { name: 'JBR Beach', position: 1250, isTransfer: false, isCurrent: false }
+                        { name: 'Burj Khalifa', position: 200, isTransfer: false, isCurrent: false },
+                        { name: 'Downtown Dubai', position: 350, isTransfer: true, transferRoutes: ['F15', 'F20', 'F25'], isCurrent: false },
+                        { name: 'Business Bay', position: 500, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Marina', position: 650, isTransfer: true, transferRoutes: ['F25', 'F30', 'F35'], isCurrent: false },
+                        { name: 'JBR', position: 800, isTransfer: false, isCurrent: false },
+                        { name: 'Palm Jumeirah', position: 1400, isTransfer: true, transferRoutes: ['F35', 'F40', 'F45'], isCurrent: true }, // Current stop
+                        { name: 'Dubai Hills', position: 1550, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Sports City', position: 1700, isTransfer: true, transferRoutes: ['F45', 'F50', 'F55'], isCurrent: false },
+                        { name: 'Dubai Investment Park', position: 1850, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Silicon Oasis', position: 2000, isTransfer: true, transferRoutes: ['F55', 'F60', 'F65'], isCurrent: false },
+                        { name: 'Dubai International City', position: 2150, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Festival City', position: 2300, isTransfer: true, transferRoutes: ['F65', 'F70', 'F75'], isCurrent: false },
+                        { name: 'Dubai Healthcare City', position: 2450, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Creek', position: 2600, isTransfer: true, transferRoutes: ['F75', 'F80', 'F85'], isCurrent: false },
+                        { name: 'Dubai Gold Souk', position: 2750, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Spice Souk', position: 2900, isTransfer: true, transferRoutes: ['F85', 'F90', 'F95'], isCurrent: false },
+                        { name: 'Dubai Fish Market', position: 3050, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Port', position: 3200, isTransfer: true, transferRoutes: ['F95', 'F100', 'F105'], isCurrent: false },
+                        { name: 'Dubai Airport', position: 3350, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai Cargo Village', position: 3500, isTransfer: true, transferRoutes: ['F105', 'F110', 'F115'], isCurrent: false },
+                        { name: 'Dubai Logistics City', position: 3650, isTransfer: false, isCurrent: false },
+                        { name: 'Dubai World Central', position: 3800, isTransfer: true, transferRoutes: ['F115', 'F120', 'F125'], isCurrent: false },
+                        { name: 'Dubai South', position: 3950, isTransfer: false, isCurrent: false },
+                        { name: 'JBR Beach', position: 3950, isTransfer: false, isCurrent: false }
                       ].map((stop, index) => (
                         <div key={index} style={{
                           position: 'absolute',
@@ -796,50 +797,40 @@ function App() {
                           textAlign: 'center',
                           zIndex: stop.isCurrent ? 10 : 5
                         }}>
-                          {/* Stop Marker */}
+                          {/* Stop Marker - On the route line */}
                           <div style={{
                             width: stop.isCurrent ? '16px' : '12px',
                             height: stop.isCurrent ? '16px' : '12px',
                             backgroundColor: stop.isCurrent ? 'var(--success)' : 
                                            stop.isTransfer ? 'var(--warning)' : 'var(--primary-blue)',
                             borderRadius: '50%',
-                            margin: '0 auto 8px',
+                            margin: '0 auto',
                             border: stop.isCurrent ? '3px solid white' : '2px solid white',
                             boxShadow: stop.isCurrent ? '0 4px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
-                            animation: stop.isCurrent ? 'pulse 2s infinite' : 'none'
+                            animation: stop.isCurrent ? 'pulse 2s infinite' : 'none',
+                            position: 'relative',
+                            top: '0px' // On the route line
                           }}></div>
                           
-                          {/* Stop Number */}
-                          <div style={{
-                            fontSize: '10px',
-                            color: 'var(--text-muted)',
-                            fontWeight: 'bold',
-                            marginBottom: '4px'
-                          }}>
-                            {index + 1}
-                          </div>
-                          
-                          {/* Stop Name - Vertical Text */}
+                          {/* Stop Name - Below the point */}
                           <div style={{
                             fontSize: '10px',
                             color: stop.isCurrent ? 'var(--success)' : 'var(--text-primary)',
                             fontWeight: stop.isCurrent ? 'bold' : 'normal',
-                            writingMode: 'vertical-rl',
-                            textOrientation: 'mixed',
-                            whiteSpace: 'nowrap',
+                            marginTop: '12px',
                             backgroundColor: 'rgba(255,255,255,0.95)',
-                            padding: '4px 2px',
+                            padding: '4px 6px',
                             borderRadius: '4px',
                             border: stop.isCurrent ? '2px solid var(--success)' : '1px solid var(--border-light)',
-                            minHeight: '60px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                            whiteSpace: 'nowrap',
+                            maxWidth: '80px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
                           }}>
                             {stop.name}
                           </div>
                           
-                          {/* Transfer Info */}
+                          {/* Transfer Info - Below the name */}
                           {stop.isTransfer && stop.transferRoutes && (
                             <div style={{
                               fontSize: '8px',
@@ -849,10 +840,14 @@ function App() {
                               color: 'white',
                               padding: '2px 4px',
                               borderRadius: '3px',
-                              writingMode: 'horizontal-tb',
-                              textOrientation: 'mixed'
+                              display: 'flex',
+                              gap: '2px',
+                              flexWrap: 'wrap',
+                              justifyContent: 'center'
                             }}>
-                              {stop.transferRoutes.join(', ')}
+                              {stop.transferRoutes.map((route, routeIndex) => (
+                                <span key={routeIndex}>{route}</span>
+                              ))}
                             </div>
                           )}
                         </div>
