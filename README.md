@@ -9,6 +9,13 @@ A modern real-time bus information reminder application with PWA support, helpin
 - Real-time display of bus arrival times
 - Support for stop code and name search
 
+### 🚌 Route Query by Line Number
+- Query bus stops by route number or route ID
+- View stops in sequence order
+- Support direction filtering (0/1)
+- Service date selection
+- Health check functionality
+
 ### 🔔 Smart Reminder System
 - Automatic alerts when buses are approaching
 - Arrival time change notifications
@@ -77,6 +84,12 @@ npm run preview
 - **Auto Refresh**: Automatically update bus information (every 30 seconds)
 - **Dark Mode**: Switch between dark/light themes
 
+### Route Query Settings
+- **Line Number Input**: Enter route number (e.g., "8") or route ID (e.g., "F11")
+- **Direction Filter**: Select direction 0 or 1 (optional)
+- **Service Date**: Choose specific date (defaults to today)
+- **Health Check**: Test database connection and functionality
+
 ## 🔧 Technical Architecture
 
 - **Frontend Framework**: React 19 + TypeScript
@@ -119,8 +132,51 @@ dubai-bus-buddy/
 - View basic information even when offline
 - Auto-sync when network is restored
 
+## 🚌 Route Query API
+
+### Database RPC Functions
+
+#### route_stops
+**Purpose**: Get ordered stops for a specific route
+**Parameters**:
+- `p_route_id` (TEXT, required): Target route ID
+- `p_service_date` (DATE, default: current_date): Service date
+- `p_direction` (INT, default: null): Direction filter
+- `p_max_trips` (INT, default: 1): Maximum trips to consider
+
+**Returns**: Array of stops with order_no, stop_id, stop_name, coordinates, trip_id, shape_id, direction_id
+
+#### route_id_by_short_name
+**Purpose**: Convert route short name to route ID
+**Parameters**:
+- `p_route_short_name` (TEXT): Route short name (e.g., "8")
+
+**Returns**: Array of matching routes with route_id, route_short_name, route_long_name
+
+### REST Endpoints
+
+**Base URL**: `https://dxjaxszouwvmffeujpkx.supabase.co/rest/v1/rpc/`
+
+**Headers**:
+```
+apikey: <SUPABASE_ANON_KEY>
+Authorization: Bearer <SUPABASE_ANON_KEY>
+Content-Type: application/json
+```
+
+**Example Payload**:
+```json
+{
+  "p_route_id": "F11",
+  "p_service_date": "2024-01-15",
+  "p_direction": 0,
+  "p_max_trips": 1
+}
+```
+
 ## 🔮 Future Plans
 
+- [x] Route query by line number
 - [ ] Integrate real bus API
 - [ ] Add route planning functionality
 - [ ] Support multiple languages

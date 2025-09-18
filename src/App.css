@@ -472,3 +472,64 @@ body {
   content: "●";
   animation: pulse 2s infinite;
 }
+
+/* 公交车移动动画 */
+@keyframes busMove {
+  0% {
+    transform: scaleX(-1) translateX(0);
+  }
+  50% {
+    transform: scaleX(-1) translateX(2px);
+  }
+  100% {
+    transform: scaleX(-1) translateX(0);
+  }
+}
+
+/* 公交车状态动画 */
+@keyframes busMoving {
+  0%, 100% {
+    transform: scaleX(-1) scale(1);
+  }
+  50% {
+    transform: scaleX(-1) scale(1.05);
+  }
+}
+
+@keyframes busStopped {
+  0%, 100% {
+    transform: scaleX(-1) scale(1);
+  }
+  50% {
+    transform: scaleX(-1) scale(0.95);
+  }
+}
+
+@keyframes busDelayed {
+  0%, 100% {
+    transform: scaleX(-1) scale(1);
+  }
+  25% {
+    transform: scaleX(-1) scale(1.1);
+  }
+  75% {
+    transform: scaleX(-1) scale(0.9);
+  }
+}
+
+/* 公交车图标样式 */
+.bus-icon {
+  transition: all 0.3s ease;
+}
+
+.bus-icon.moving {
+  animation: busMoving 2s infinite;
+}
+
+.bus-icon.stopped {
+  animation: busStopped 3s infinite;
+}
+
+.bus-icon.delayed {
+  animation: busDelayed 1.5s infinite;
+}

@@ -28,7 +28,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
     }
 
     // Check notification permission
-    if (notificationService.isSupported()) {
+    if (notificationService.isNotificationSupported()) {
       setNotificationEnabled(notificationService.getPermissionStatus() === 'granted');
     }
   }, []);

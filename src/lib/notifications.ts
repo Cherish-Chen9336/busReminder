@@ -1,142 +1,92 @@
-
-
+// Enhanced notification service for bus arrivals
 export class NotificationService {
-  private static instance: NotificationService;
   private permission: NotificationPermission = 'default';
+  private isSupported: boolean = false;
 
-  private constructor() {
-    this.checkPermission();
+  constructor() {
+    this.isSupported = 'Notification' in window;
+    this.permission = Notification.permission;
   }
 
-  public static getInstance(): NotificationService {
-    if (!NotificationService.instance) {
-      NotificationService.instance = new NotificationService();
-
-      
-    }
-    return NotificationService.instance;
+  // Check if notifications are supported
+  isNotificationSupported(): boolean {
+    return this.isSupported;
   }
 
-  private async checkPermission(): Promise<void> {
-    if ('Notification' in window) {
-      this.permission = Notification.permission;
-    }
+  // Get current permission status
+  getPermissionStatus(): NotificationPermission {
+    return this.permission;
   }
 
-  public async requestPermission(): Promise<boolean> {
-    if (!('Notification' in window)) {
-      console.warn('This browser does not support notifications');
-      return false;
-    }
-
-    if (this.permission === 'granted') {
-      return true;
-    }
-
-    if (this.permission === 'denied') {
-      console.warn('Notification permission denied');
+  // Request notification permission
+  async requestPermission(): Promise<boolean> {
+    if (!this.isSupported) {
+      console.warn('Notifications are not supported in this browser');
       return false;
     }
 
     try {
-      const result = await Notification.requestPermission();
-      this.permission = result;
-      return result === 'granted';
+      const permission = await Notification.requestPermission();
+      this.permission = permission;
+      return permission === 'granted';
     } catch (error) {
-      console.error('Failed to request notification permission:', error);
+      console.error('Error requesting notification permission:', error);
       return false;
     }
   }
 
-  public async showNotification(title: string, options: NotificationOptions = {}): Promise<void> {
-    if (!('Notification' in window)) {
+  // Show bus arrival notification
+  async showBusArrival(route: string, stopName: string, etaMinutes: number): Promise<void> {
+    if (this.permission !== 'granted') {
+      console.warn('Notification permission not granted');
       return;
     }
 
-    if (this.permission !== 'granted') {
-      const granted = await this.requestPermission();
-      if (!granted) {
-        return;
-      }
-    }
-
-    const defaultOptions: NotificationOptions = {
+    const notification = new Notification(`🚌 Bus ${route} Arriving`, {
+      body: `Bus ${route} will arrive at ${stopName} in ${etaMinutes} minutes`,
       icon: '/icon-placeholder.svg',
       badge: '/icon-placeholder.svg',
-      requireInteraction: false,
-      ...options
+      tag: `bus-${route}-${stopName}`,
+      requireInteraction: true
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
     };
 
-    try {
-      const notification = new Notification(title, defaultOptions);
-      
-      // Auto-close notification
-      setTimeout(() => {
-        notification.close();
-      }, 5000);
+    // Auto-close after 10 seconds
+    setTimeout(() => {
+      notification.close();
+    }, 10000);
+  }
 
-      // Close notification when clicked
-      notification.onclick = () => {
-        notification.close();
-        window.focus();
-      };
-    } catch (error) {
-      console.error('Failed to display notification:', error);
+  // Show bus reminder notification
+  async showBusReminder(route: string, stopName: string, reminderMinutes: number): Promise<void> {
+    if (this.permission !== 'granted') {
+      console.warn('Notification permission not granted');
+      return;
     }
-  }
 
-  public async showBusReminder(
-    route: string, 
-    destination: string, 
-    etaMinutes: number
-  ): Promise<void> {
-    const title = `🚌 Bus Reminder`;
-    const body = `Bus ${route} will arrive at ${destination} in ${etaMinutes} minutes`;
-    
-    await this.showNotification(title, {
-      body,
-      tag: `bus-${route}-${destination}`
-    });
-  }
-
-  public async showDepartureUpdate(
-    route: string,
-    destination: string,
-    newEtaMinutes: number,
-    _oldEtaMinutes: number
-  ): Promise<void> {
-    const title = `🔄 Time Update`;
-    const body = `Bus ${route} arrival time at ${destination} has been updated to ${newEtaMinutes} minutes`;
-    
-    await this.showNotification(title, {
-      body,
-      tag: `update-${route}-${destination}`,
+    const notification = new Notification(`⏰ Bus Reminder`, {
+      body: `Bus ${route} will arrive at ${stopName} in ${reminderMinutes} minutes`,
+      icon: '/icon-placeholder.svg',
+      badge: '/icon-placeholder.svg',
+      tag: `reminder-${route}-${stopName}`,
       requireInteraction: true
     });
-  }
 
-  public async showServiceAlert(
-    route: string,
-    message: string
-  ): Promise<void> {
-    const title = `⚠️ Service Alert`;
-    const body = `Bus ${route}: ${message}`;
-    
-    await this.showNotification(title, {
-      body,
-      tag: `alert-${route}`,
-      requireInteraction: true
-    });
-  }
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
 
-  public isSupported(): boolean {
-    return 'Notification' in window;
-  }
-
-  public getPermissionStatus(): NotificationPermission {
-    return this.permission;
+    // Auto-close after 15 seconds
+    setTimeout(() => {
+      notification.close();
+    }, 15000);
   }
 }
 
-// Export singleton instance
-export const notificationService = NotificationService.getInstance();
+// Create global instance
+export const notificationService = new NotificationService();
