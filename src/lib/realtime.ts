@@ -1,16 +1,16 @@
-// 实时公交位置跟踪服务
+// Real-time bus position tracking service
 export interface BusPosition {
   busId: string;
   routeId: string;
   currentStop: string;
   nextStop: string;
-  progress: number; // 0-100，表示在路线上的进度百分比
+  progress: number; // 0-100, represents progress percentage on route
   lat: number;
   lon: number;
   lastUpdate: Date;
   direction: 'inbound' | 'outbound';
   status: 'moving' | 'stopped' | 'delayed';
-  eta: number; // 到达下一站的预计时间（分钟）
+  eta: number; // Estimated time to next stop (minutes)
 }
 
 export interface RouteInfo {
@@ -27,19 +27,19 @@ export interface RouteInfo {
   }>;
 }
 
-// 实时数据跟踪器 - 只显示真实数据
+// Real-time data tracker - only shows real data
 class RealtimeBusTracker {
   private buses: Map<string, BusPosition> = new Map();
   private updateInterval: number | null = null;
   private callbacks: Set<(buses: BusPosition[]) => void> = new Set();
 
   constructor() {
-    // 不初始化模拟数据，只等待真实数据
+    // Don't initialize mock data, only wait for real data
   }
 
-  // 计算两点之间的距离（公里）
+  // Calculate distance between two points (kilometers)
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371; // 地球半径（公里）
+    const R = 6371; // Earth radius (kilometers)
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -49,19 +49,19 @@ class RealtimeBusTracker {
     return R * c;
   }
 
-  // 添加真实公交车数据
+  // Add real bus data
   addBus(bus: BusPosition) {
     this.buses.set(bus.busId, bus);
     this.notifySubscribers();
   }
 
-  // 移除公交车数据
+  // Remove bus data
   removeBus(busId: string) {
     this.buses.delete(busId);
     this.notifySubscribers();
   }
 
-  // 更新公交车数据
+  // Update bus data
   updateBus(busId: string, updates: Partial<BusPosition>) {
     const existingBus = this.buses.get(busId);
     if (existingBus) {
@@ -70,19 +70,19 @@ class RealtimeBusTracker {
     }
   }
 
-  // 开始实时更新 - 只处理真实数据
+  // Start real-time updates - only process real data
   startUpdates() {
     if (this.updateInterval) return;
     
-    // 真实数据更新逻辑 - 从Supabase获取数据
+    // Real data update logic - get data from Supabase
     this.updateInterval = window.setInterval(() => {
-      // 这里应该从Supabase获取实时公交车数据
-      // 目前只通知订阅者，不生成模拟数据
+      // Here should get real-time bus data from Supabase
+      // Currently only notify subscribers, no mock data generation
       this.notifySubscribers();
-    }, 30000); // 每30秒检查一次真实数据
+    }, 30000); // Check real data every 30 seconds
   }
 
-  // 停止实时更新
+  // Stop real-time updates
   stopUpdates() {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -90,28 +90,28 @@ class RealtimeBusTracker {
     }
   }
 
-  // 订阅更新
+  // Subscribe to updates
   subscribe(callback: (buses: BusPosition[]) => void) {
     this.callbacks.add(callback);
     return () => this.callbacks.delete(callback);
   }
 
-  // 通知订阅者
+  // Notify subscribers
   private notifySubscribers() {
     const buses = Array.from(this.buses.values());
     this.callbacks.forEach(callback => callback(buses));
   }
 
-  // 获取当前所有公交车位置
+  // Get current all bus positions
   getCurrentBuses(): BusPosition[] {
     return Array.from(this.buses.values());
   }
 
-  // 获取特定路线的公交车
+  // Get buses for specific route
   getBusesByRoute(routeId: string): BusPosition[] {
     return Array.from(this.buses.values()).filter(bus => bus.routeId === routeId);
   }
 }
 
-// 创建全局实例
+// Create global instance
 export const realtimeTracker = new RealtimeBusTracker();

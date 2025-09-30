@@ -70,7 +70,7 @@ export function RouteQuery({ isOpen, onClose }: RouteQueryProps) {
 
       // Call route_stops to get stop information
       console.log('Querying route stops with parameters:', { routeId, serviceDate, direction });
-      const stops = await getRouteStops(routeId, serviceDate, direction || undefined) as RouteStop[];
+      const stops = await getRouteStops(routeId) as RouteStop[];
       
       console.log('Raw stops data received:', stops);
       
@@ -96,7 +96,7 @@ export function RouteQuery({ isOpen, onClose }: RouteQueryProps) {
       // Test with a common route ID like F11
       console.log('Performing health check, testing database connection with F11 route...');
       
-      const result = await getRouteStops('F11', new Date().toISOString().split('T')[0], undefined, 1) as RouteStop[];
+      const result = await getRouteStops('F11') as RouteStop[];
       
       if (result && Array.isArray(result)) {
         if (result.length > 0) {

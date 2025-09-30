@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import './App.css'
-import { getNearbyStops, getDepartures, healthCheck, DUBAI_CENTER } from './lib/supabase'
+import { getNearbyStops, getDepartures, healthCheck, DUBAI_CENTER, getRouteStops } from './lib/supabase'
 import { realtimeTracker } from './lib/realtime'
 import type { BusPosition } from './lib/realtime'
-import { notificationService } from './lib/notifications'
+// import { notificationService } from './lib/notifications'
 import { shareService } from './lib/share'
 import { RouteQuery } from './components/RouteQuery'
+import RouteDetailPage from './components/RouteDetailPage'
+// Removed StopDetailPage import as it's now handled by routing
 
 // Enhanced type definitions
 interface Stop {
@@ -35,6 +37,8 @@ interface Departure {
 interface RouteInfo {
   route: string
   headsign: string
+  route_id?: string
+  bus_id?: string
   nextDeparture: Departure
   allDepartures: Departure[]
 }
@@ -78,21 +82,30 @@ function App() {
   const [closestStop, setClosestStop] = useState<Stop | null>(null)
   const [nearbyStops, setNearbyStops] = useState<Stop[]>([])
   const [departures, setDepartures] = useState<RouteInfo[]>([])
-  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null)
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number, accuracy?: number} | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [healthStatus, setHealthStatus] = useState<{success: boolean, message: string, data?: any, error?: string} | null>(null)
   const [isHealthChecking, setIsHealthChecking] = useState(false)
   const [useDubaiCenter, setUseDubaiCenter] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'failed' | 'idle'>('idle')
-  const [selectedRoute, setSelectedRoute] = useState<any>(null)
-  const [showRouteDetail, setShowRouteDetail] = useState(false)
+  // Removed showRouteDetail state - using page routing instead
+  const [routeStops, setRouteStops] = useState<any[]>([])
   const [realtimeBuses, setRealtimeBuses] = useState<BusPosition[]>([])
   const [isRealtimeActive] = useState(true)
-  // Removed F11 route stops state as it was causing errors
+  // Add page state management for routing
+  const [currentPage, setCurrentPage] = useState<'main' | 'stop-detail' | 'route-detail'>('main')
+  const [selectedStop, setSelectedStop] = useState<Stop | null>(null)
+  const [selectedRoute, setSelectedRoute] = useState<any>(null)
 
   // Get user location with fallback to Dubai center
-  const getCurrentLocation = () => {
+  const getCurrentLocation = (forceRefresh = false) => {
+    console.log('=== Getting user location ===')
+    if (forceRefresh) {
+      console.log('🔄 Force refreshing GPS location...')
+    }
+    console.log('navigator.geolocation available:', !!navigator.geolocation)
+    
     if (navigator.geolocation) {
       console.log('Requesting location permission...')
       setError(null)
@@ -100,46 +113,85 @@ function App() {
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords
-          console.log('Location obtained:', { lat: latitude, lon: longitude })
-          setUserLocation({ lat: latitude, lon: longitude })
+          const { latitude, longitude, accuracy } = position.coords
+          console.log('✅ Location obtained successfully!')
+          console.log('Latitude:', latitude)
+          console.log('Longitude:', longitude)
+          console.log('Accuracy:', accuracy, 'meters')
+          console.log('Timestamp:', new Date(position.timestamp))
+          
+          // Check if accuracy is reasonable (adjusted for mobile GPS)
+          if (accuracy > 5000) {
+            console.log('⚠️ Location accuracy is very low, may be inaccurate')
+            console.log('⚠️ Accuracy:', accuracy, 'meters - consider refreshing GPS')
+            setError(`Location accuracy too low (${Math.round(accuracy)}m). Move outdoors or enable precise location.`)
+          setUserLocation({ lat: latitude, lon: longitude, accuracy })
           setUseDubaiCenter(false)
           setIsLoading(false)
+            return
+          } else if (accuracy > 1000) {
+            console.log('⚠️ Location accuracy is moderate')
+            console.log('⚠️ Accuracy:', accuracy, 'meters - acceptable for mobile GPS')
+          } else {
+            console.log('✅ Location accuracy is good')
+            console.log('✅ Accuracy:', accuracy, 'meters - excellent precision')
+          }
+          
+          setUserLocation({ lat: latitude, lon: longitude, accuracy })
+          setUseDubaiCenter(false)
+          setIsLoading(false)
+          console.log('Location state updated')
         },
         (error) => {
-          console.error('Error getting location:', error)
+          console.error('❌ Location acquisition failed:', error)
+          console.log('Error code:', error.code)
+          console.log('Error message:', error.message)
+          
           let errorMessage = 'Unable to get location information'
           switch(error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Click "Use Dubai Center" to continue with Dubai center coordinates.'
-              setUseDubaiCenter(true)
-              // Automatically use Dubai center if permission is denied
-              setTimeout(() => {
-                useDubaiCenterLocation()
-              }, 2000)
+              errorMessage = 'Location access denied. Please allow location permission or click "Use Dubai Center" to continue.'
+              console.log('Reason: User denied location permission')
               break
             case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable. Click "Use Dubai Center" to continue.'
-              setUseDubaiCenter(true)
+              errorMessage = 'Location information unavailable. Please check GPS settings or click "Use Dubai Center" to continue.'
+              console.log('Reason: Location information unavailable')
               break
             case error.TIMEOUT:
-              errorMessage = 'Location request timed out. Click "Use Dubai Center" to continue.'
-              setUseDubaiCenter(true)
+              errorMessage = 'Location request timed out. Please retry or click "Use Dubai Center" to continue.'
+              console.log('Reason: Location request timeout')
+              break
+            default:
+              errorMessage = 'Unknown error occurred while getting location.'
+              console.log('Reason: Unknown error')
               break
           }
+          
           setError(errorMessage)
+          setUseDubaiCenter(true)
           setIsLoading(false)
+          
+          // Only auto-use Dubai center if not force refresh
+          if (!forceRefresh) {
+            console.log('Auto-using Dubai center as fallback location...')
+            setTimeout(() => {
+              useDubaiCenterLocation()
+            }, 2000)
+          }
         },
         {
-          enableHighAccuracy: false, // Reduce accuracy requirements
-          timeout: 10000, // Reduce timeout
-          maximumAge: 300000
+          enableHighAccuracy: true, // Use high accuracy for better results
+          timeout: 20000, // Increase timeout for high accuracy
+          maximumAge: forceRefresh ? 0 : 300000 // Force refresh if requested
         }
       )
     } else {
-      setError('Geolocation is not supported by this browser. Using Dubai center as fallback.')
+      console.log('❌ Browser does not support geolocation API')
+      setError('This browser does not support geolocation. Using Dubai center as fallback.')
       setUseDubaiCenter(true)
-      // Automatically use Dubai center if geolocation is not supported
+      setIsLoading(false)
+      
+      // Auto-use Dubai center as fallback
       setTimeout(() => {
         useDubaiCenterLocation()
       }, 1000)
@@ -148,10 +200,40 @@ function App() {
 
   // Use Dubai center as fallback location
   const useDubaiCenterLocation = () => {
-    console.log('Using Dubai center as location:', DUBAI_CENTER)
+    console.log('=== Using Dubai center as fallback location ===')
+    console.log('Dubai center coordinates:', DUBAI_CENTER)
     setUserLocation(DUBAI_CENTER)
     setUseDubaiCenter(true)
     setError(null)
+    console.log('Switched to Dubai center location')
+  }
+
+  // Navigation functions - use URL routing for stop details
+  const navigateToStopDetail = (stop: Stop) => {
+    // Navigate to /stop/:stop_id
+    window.location.href = `/stop/${stop.id}`
+  }
+
+  const navigateToRouteDetail = async (route: any) => {
+    setSelectedRoute(route)
+    setCurrentPage('route-detail')
+    
+    // Load route stops when navigating to route detail
+    try {
+      console.log('Loading route stops for route:', route.route_id || route.route)
+      const stops = await getRouteStops(route.route_id || route.route)
+      console.log('Route stops loaded:', stops)
+      setRouteStops(stops)
+    } catch (error) {
+      console.error('Error loading route stops:', error)
+      setRouteStops([])
+    }
+  }
+
+  const navigateBackToMain = () => {
+    setCurrentPage('main')
+    setSelectedStop(null)
+    setSelectedRoute(null)
   }
 
   useEffect(() => {
@@ -206,23 +288,43 @@ function App() {
 
   // Load nearby stops when location is available
   useEffect(() => {
+    console.log('=== useEffect triggered ===')
+    console.log('userLocation:', userLocation)
     if (userLocation) {
+      console.log('userLocation exists, calling loadNearbyStops...')
       loadNearbyStops()
+    } else {
+      console.log('No userLocation, skipping loadNearbyStops')
     }
   }, [userLocation])
 
   // Load nearby stops from Supabase
   const loadNearbyStops = async () => {
-    if (!userLocation) return
+    console.log('🚀🚀🚀 loadNearbyStops function called! 🚀🚀🚀')
+    console.log('userLocation check:', userLocation)
     
+    if (!userLocation) {
+      console.log('❌ No userLocation, returning early')
+      return
+    }
+    
+    console.log('✅ userLocation exists, proceeding...')
     setIsLoading(true)
     setError(null)
     setConnectionStatus('connecting')
     
     try {
+      console.log('=== loadNearbyStops called ===')
       console.log('Loading nearby stops for location:', userLocation)
-      const stops = await getNearbyStops(userLocation.lat, userLocation.lon, 5000) as Stop[]
+      console.log('Force refresh timestamp:', Date.now())
+      console.log('About to call getNearbyStops with:', { lat: userLocation.lat, lon: userLocation.lon, radius: 10000, limit: 50 })
+      
+      const stops = await getNearbyStops(userLocation.lat, userLocation.lon, 10000, 50) as Stop[]
+      console.log('=== getNearbyStops returned ===')
       console.log('Nearby stops received:', stops)
+      console.log('Stops length:', stops.length)
+      console.log('Stops type:', typeof stops)
+      console.log('Is array:', Array.isArray(stops))
       setNearbyStops(stops)
       setConnectionStatus('connected')
       
@@ -231,14 +333,23 @@ function App() {
         console.log('All stops received:', stops)
         
         // Map Supabase response to our Stop interface
-        const mappedStops = stops.map((stop: any) => ({
+        const mappedStops = stops.map((stop: any) => {
+          console.log(`Mapping stop ${stop.stop_id}: distance_m=${stop.distance_m}, stop_name=${stop.stop_name}`)
+          return {
           id: stop.stop_id,
           name: stop.stop_name,
           code: stop.stop_id, // Use stop_id as code
-          distance: stop.distance_m,
+          distance: stop.distance_m,  // Use RPC distance_m field
           lat: stop.stop_lat,
           lon: stop.stop_lon
-        }))
+          }
+        })
+        
+        // Debug: Log the mapped stops to verify data structure
+        console.log('=== Mapped Stops Debug ===')
+        console.log('Total stops:', stops.length)
+        console.log('Mapped stops structure:', mappedStops)
+        console.log('First stop details:', mappedStops[0])
         
         console.log('Mapped stops:', mappedStops)
         setNearbyStops(mappedStops)
@@ -246,10 +357,21 @@ function App() {
         const closest = mappedStops.reduce((prev, current) => 
           (prev.distance || 0) < (current.distance || 0) ? prev : current
         )
+        console.log('=== Closest Stop Selection ===')
         console.log('Closest stop details:', closest)
         console.log('Closest stop ID:', closest.id)
+        console.log('Closest stop name:', closest.name)
+        console.log('Closest stop distance:', closest.distance)
+        
+        // Validate distance - if too large, likely lat/lon swapped or bad GPS
+        if (closest.distance > 50000) {
+          console.error('Distance too large:', closest.distance, 'm - likely lat/lon swapped or bad GPS')
+          setError(`Distance too large (${Math.round(closest.distance)}m). This may indicate GPS issues or coordinate problems.`)
+          return
+        }
         
         if (closest.id) {
+          console.log('Setting closest stop and loading departures...')
           setClosestStop(closest)
           loadDepartures(closest.id)
         } else {
@@ -262,7 +384,11 @@ function App() {
         setDepartures([]) // Clear departures when no stops found
       }
     } catch (err) {
+      console.error('=== Error in loadNearbyStops ===')
       console.error('Error loading nearby stops:', err)
+      console.error('Error type:', typeof err)
+      console.error('Error message:', err instanceof Error ? err.message : String(err))
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace')
       setConnectionStatus('failed')
       setError(`Failed to load nearby stops: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
@@ -285,7 +411,7 @@ function App() {
       console.log('Loading departures for stop:', stopId)
       const now = new Date().toISOString()
       console.log('Request time:', now)
-      const deps = await getDepartures(stopId, now, 20) as any[]
+      const deps = await getDepartures(stopId, now, 50) as any[]
       console.log('Raw departures received:', deps)
       console.log('Departures type:', typeof deps)
       console.log('Departures length:', Array.isArray(deps) ? deps.length : 'Not an array')
@@ -294,8 +420,9 @@ function App() {
         console.log('First departure:', deps[0])
         // Map the data to our Departure interface based on actual Supabase response structure
         const mappedDepartures = deps.map((dep: any) => ({
-          route: dep.route_name || dep.route_id || 'Unknown',
-          headsign: dep.headsign || dep.trip_headsign || 'Unknown Destination',
+          route: dep.route_name || dep.route_id || 'Unknown Route',
+          headsign: dep.headsign || dep.trip_headsign || dep.route_long_name || 'Unknown Destination',
+          route_id: dep.route_id,
           etaMin: dep.eta_minutes || 0,
           scheduled: dep.departure_time || dep.arrival_time || 'Unknown',
           status: dep.status || 'ON_TIME',
@@ -316,6 +443,7 @@ function App() {
             uniqueRoutes.set(dep.route, {
               route: dep.route,
               headsign: dep.headsign,
+              route_id: dep.route_id,
               nextDeparture: dep,
               allDepartures: []
             })
@@ -331,6 +459,8 @@ function App() {
         // Only show real data from Supabase - no mock data
         
         console.log('Mapped departures:', mappedDepartures)
+        console.log('Unique routes found:', [...new Set(mappedDepartures.map(d => d.route))])
+        console.log('Total routes:', [...new Set(mappedDepartures.map(d => d.route))].length)
         console.log('Filtered departures (next 2 hours):', filteredDepartures)
         console.log('Final route list with real data:', routeList)
         setDepartures(routeList ?? [])
@@ -348,17 +478,116 @@ function App() {
     }
   }
 
-  // Simulate real-time updates
+  // Load route stops for a specific route
+  const loadRouteStops = async (routeId: string) => {
+    try {
+      console.log('=== Loading route stops ===')
+      console.log('Route ID received:', routeId)
+      console.log('Route ID type:', typeof routeId)
+      console.log('Route ID length:', routeId?.length)
+      
+      if (!routeId || routeId === 'undefined' || routeId === 'null') {
+        console.error('Invalid route ID provided:', routeId)
+        setRouteStops([])
+        return
+      }
+      
+      console.log('Calling getRouteStops with:', routeId)
+      const stops = await getRouteStops(routeId)
+      console.log('Route stops loaded:', stops)
+      console.log('Number of stops found:', stops.length)
+      console.log('Setting routeStops state with:', stops)
+      
+      if (stops.length === 0) {
+        console.warn('No stops found for route:', routeId)
+        console.warn('This will cause the detail page to show "Loading route stops..."')
+      }
+      
+      setRouteStops(stops)
+      console.log('routeStops state updated')
+    } catch (err) {
+      console.error('Error loading route stops:', err)
+      console.error('Error details:', err instanceof Error ? err.message : String(err))
+      setRouteStops([])
+    }
+  }
+
+  // Update ETA times without reloading data
+  const updateETATimes = () => {
+    setDepartures(prevDepartures => {
+      const currentTime = new Date()
+      const updatedDepartures = prevDepartures.map(route => {
+        const scheduledTime = new Date(`${currentTime.toISOString().split('T')[0]}T${route.nextDeparture.scheduled}`)
+        const etaMinutes = Math.max(0, Math.round((scheduledTime.getTime() - currentTime.getTime()) / (1000 * 60)))
+        
+        // If current departure has passed or is very close (etaMin <= 0), find the next departure
+        if (etaMinutes <= 0 && route.allDepartures.length > 1) {
+          // Find the next departure after the current one
+          const nextDeparture = route.allDepartures.find(dep => {
+            const depTime = new Date(`${currentTime.toISOString().split('T')[0]}T${dep.scheduled}`)
+            return depTime.getTime() > currentTime.getTime()
+          })
+          
+          if (nextDeparture) {
+            const nextScheduledTime = new Date(`${currentTime.toISOString().split('T')[0]}T${nextDeparture.scheduled}`)
+            const nextEtaMinutes = Math.max(0, Math.round((nextScheduledTime.getTime() - currentTime.getTime()) / (1000 * 60)))
+            
+            console.log(`Switching to next departure for route ${route.route}: ${nextDeparture.scheduled} (${nextEtaMinutes} min)`)
+            
+            return {
+              ...route,
+              nextDeparture: {
+                ...nextDeparture,
+                etaMin: nextEtaMinutes
+              }
+            }
+          } else {
+            // No more departures today, remove this route from display
+            console.log(`No more departures for route ${route.route}, removing from display`)
+            return null
+          }
+        }
+        
+        return {
+          ...route,
+          nextDeparture: {
+            ...route.nextDeparture,
+            etaMin: etaMinutes
+          }
+        }
+      })
+      
+      // Filter out routes with no more departures and sort by ETA time
+      const filteredDepartures = updatedDepartures
+        .filter(route => route !== null) // Remove null routes (no more departures)
+        .filter(route => {
+          // Keep routes that have departures within the next 2 hours
+          return route.nextDeparture.etaMin <= 120
+        })
+        .sort((a, b) => a.nextDeparture.etaMin - b.nextDeparture.etaMin)
+      
+      console.log(`Updated departures: ${filteredDepartures.length} routes`)
+      return filteredDepartures
+    })
+  }
+
+  // Simulate real-time updates - only update times, not reload data
   useEffect(() => {
+    // Update every 10 seconds for smooth time display
     const interval = setInterval(() => {
       setLastUpdate(new Date())
+      updateETATimes()
+    }, 10000) // Update every 10 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Load departures only when stop changes
+  useEffect(() => {
       if (closestStop && closestStop.id) {
         loadDepartures(closestStop.id)
       }
-    }, 30000) // Update every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [closestStop])
+  }, [closestStop?.id])
 
   // Real-time bus position tracking
   useEffect(() => {
@@ -409,7 +638,7 @@ function App() {
       if (stopResults.length === 0 && userLocation) {
         console.log('No nearby results, trying broader search...')
         try {
-          const broaderResults = await getNearbyStops(userLocation.lat, userLocation.lon, 5000) as any[]
+          const broaderResults = await getNearbyStops(userLocation.lat, userLocation.lon, 1000, 100) as any[]
           const mappedBroaderResults = broaderResults.map((stop: any) => ({
             id: stop.stop_id,
             name: stop.stop_name,
@@ -497,14 +726,14 @@ function App() {
     return 'eta-normal'
   }
 
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DELAYED': return 'var(--danger)'
-      case 'EARLY': return 'var(--warning)'
-      default: return 'var(--success)'
-    }
-  }
+  // Get status color (unused function - commented out)
+  // const getStatusColor = (status: string) => {
+  //   switch (status) {
+  //     case 'DELAYED': return 'var(--danger)'
+  //     case 'EARLY': return 'var(--warning)'
+  //     default: return 'var(--success)'
+  //   }
+  // }
 
   // Get direction label
   const getDirectionLabel = (direction: string) => {
@@ -525,6 +754,18 @@ function App() {
     error,
     connectionStatus
   });
+  
+  // Enhanced debug logging for frontend display issues
+  console.log('=== Frontend Display Debug ===');
+  console.log('User location:', userLocation);
+  console.log('Closest stop:', closestStop);
+  console.log('Nearby stops count:', nearbyStops.length);
+  console.log('Departures count:', departures.length);
+  console.log('Loading state:', isLoading);
+  console.log('Error state:', error);
+  
+  // Force refresh to test distance fix
+  console.log('Distance fix applied - checking closest stop distance:', closestStop?.distance);
 
   // Check for potential issues
   if (connectionStatus === 'connected' && !closestStop && !isLoading) {
@@ -533,6 +774,34 @@ function App() {
   
   if (connectionStatus === 'connected' && closestStop && departures.length === 0 && !isLoading) {
     console.warn('Connected with closest stop but no departures');
+  }
+
+  // Render different pages based on currentPage state
+  if (currentPage === 'route-detail' && selectedRoute) {
+    return <RouteDetailPage route={selectedRoute} onBack={navigateBackToMain} />
+  }
+
+  // Check if we're on the stop detail page
+  if (window.location.pathname.startsWith('/stop/')) {
+    const stopId = window.location.pathname.split('/stop/')[1]
+    if (stopId) {
+      const StopDetailPage = React.lazy(() => import('./components/StopDetailPage'))
+      return (
+        <React.Suspense fallback={
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--light-gray)'
+          }}>
+            <div className="loading-spinner"></div>
+          </div>
+        }>
+          <StopDetailPage stopId={stopId} />
+        </React.Suspense>
+      )
+    }
   }
 
   // Error boundary for rendering
@@ -637,7 +906,7 @@ function App() {
                   console.log('Testing route stops functionality...');
                   try {
                     const { getRouteStops } = await import('./lib/supabase');
-                    const testResult = await getRouteStops('F11', new Date().toISOString().split('T')[0], undefined, 1);
+                    const testResult = await getRouteStops('F11');
                     console.log('Test result:', testResult);
                     alert(`Test completed: Found ${testResult.length} stops for F11 route`);
                   } catch (err) {
@@ -702,17 +971,149 @@ function App() {
           </div>
         </div>
 
+        {/* Current Location Info */}
+        <div className="card" style={{ margin: '20px', marginTop: '10px' }}>
+          <div style={{ padding: '16px' }}>
+            <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              📍 Current Location
+            </h4>
+            {userLocation ? (
+              <div>
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>Coordinates:</strong> {userLocation.lat.toFixed(6)}, {userLocation.lon.toFixed(6)}
+                </div>
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>Location Source:</strong> {useDubaiCenter ? 'Dubai Center (Fallback)' : 'GPS Location'}
+                </div>
+                {userLocation.accuracy && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <strong>Accuracy:</strong> ±{Math.round(userLocation.accuracy)}m
+                  </div>
+                )}
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: 'var(--text-muted)', 
+                  backgroundColor: 'var(--light-gray)', 
+                  padding: '8px', 
+                  borderRadius: '4px',
+                  marginTop: '8px'
+                }}>
+                  {useDubaiCenter ? 
+                    'Using Dubai center coordinates as fallback location. Click "Near Me" to try getting your actual location.' :
+                    'Location obtained from your device GPS.'
+                  }
+                </div>
+                <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => getCurrentLocation(true)}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '12px',
+                      backgroundColor: 'var(--primary-blue)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    🔄 Refresh GPS
+                  </button>
+                  {useDubaiCenter && (
+                    <button
+                      onClick={useDubaiCenterLocation}
+                      style={{
+                        padding: '8px 12px',
+                        fontSize: '12px',
+                        backgroundColor: 'var(--text-muted)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📍 Use Dubai Center
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{ color: 'var(--text-muted)' }}>
+                <p>Location not available. Click "Near Me" to get your location.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Debug Info */}
         {import.meta.env.DEV && (
           <div className="card" style={{ margin: '20px', marginTop: '10px', fontSize: '12px' }}>
             <div style={{ padding: '16px' }}>
               <h4 style={{ color: 'var(--primary-blue)', margin: '0 0 12px 0' }}>Debug Info</h4>
               <p><strong>User Location:</strong> {userLocation ? `${userLocation.lat.toFixed(6)}, ${userLocation.lon.toFixed(6)}` : 'Not obtained'}</p>
+              <p><strong>Location Accuracy:</strong> {userLocation?.accuracy ? `${Math.round(userLocation.accuracy)}m` : 'Unknown'}</p>
               <p><strong>Using Dubai Center:</strong> {useDubaiCenter ? 'Yes' : 'No'}</p>
               <p><strong>Nearby Stops Count:</strong> {nearbyStops.length}</p>
               <p><strong>Closest Stop:</strong> {closestStop ? closestStop.name : 'None'}</p>
+              <p><strong>Closest Stop ID:</strong> {closestStop ? closestStop.id : 'None'}</p>
+              <p><strong>Closest Distance:</strong> {closestStop ? `${Math.round(closestStop.distance || 0)}m` : 'None'}</p>
               <p><strong>Departures Count:</strong> {departures.length}</p>
               <p><strong>Loading Status:</strong> {isLoading ? 'Loading' : 'Idle'}</p>
+              <button
+                onClick={() => {
+                  console.log('=== Manual Data Flow Test ===');
+                  console.log('User location:', userLocation);
+                  console.log('Closest stop:', closestStop);
+                  console.log('Nearby stops:', nearbyStops);
+                  console.log('Departures:', departures);
+                  alert(`Debug Info:\nUser Location: ${userLocation ? `${userLocation.lat}, ${userLocation.lon}` : 'None'}\nClosest Stop: ${closestStop ? closestStop.name : 'None'}\nNearby Stops: ${nearbyStops.length}\nDepartures: ${departures.length}`);
+                }}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  backgroundColor: 'var(--primary-blue)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  marginTop: '10px'
+                }}
+              >
+                🔍 Debug Data Flow
+              </button>
+              <button
+                onClick={async () => {
+                  if (userLocation) {
+                    console.log('=== Manual RPC Test ===');
+                    console.log('Testing RPC with user location:', userLocation);
+                    try {
+                      const testStops = await getNearbyStops(userLocation.lat, userLocation.lon, 5000, 10);
+                      console.log('Manual RPC test result:', testStops);
+                      alert(`Manual RPC Test:\nFound ${testStops.length} stops\nFirst stop: ${testStops[0] ? testStops[0].stop_name : 'None'}`);
+                    } catch (err) {
+                      console.error('Manual RPC test failed:', err);
+                      alert(`Manual RPC test failed: ${err instanceof Error ? err.message : String(err)}`);
+                    }
+                  } else {
+                    alert('No user location available for testing');
+                  }
+                }}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  backgroundColor: 'var(--warning)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  marginTop: '10px',
+                  marginLeft: '10px'
+                }}
+              >
+                🧪 Test RPC
+              </button>
             </div>
           </div>
         )}
@@ -730,6 +1131,27 @@ function App() {
               <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
                 Get live updates on bus arrivals and departures
               </p>
+              {/* Current Location Display */}
+              {userLocation && (
+                <div style={{ 
+                  marginTop: '8px', 
+                  padding: '8px 12px', 
+                  backgroundColor: 'var(--light-gray)', 
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span>📍</span>
+                  <span>
+                    {useDubaiCenter ? 'Dubai Center' : 'Your Location'}: 
+                    {userLocation.lat.toFixed(4)}, {userLocation.lon.toFixed(4)}
+                    {userLocation.accuracy && ` (±${Math.round(userLocation.accuracy)}m)`}
+                  </span>
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
@@ -750,8 +1172,8 @@ function App() {
           </div>
         </header>
 
-        {/* Route Detail Modal */}
-        {showRouteDetail && selectedRoute && (
+        {/* Route Detail Modal - Removed, using page routing instead */}
+        {false && (
           <div style={{
             position: 'fixed',
             top: 0,
@@ -787,18 +1209,20 @@ function App() {
                     Route {selectedRoute?.route || 'Unknown'}
                   </h2>
                   <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>
-                    To: {selectedRoute?.headsign || 'Unknown Destination'}
+                    To: {routeStops.length > 0 ? routeStops[routeStops.length - 1].stop_name : (selectedRoute?.headsign || 'Unknown Destination')}
                   </p>
                   <div style={{ marginTop: '8px', fontSize: '14px', color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>Route {selectedRoute?.route || 'Unknown'}</span>
+                  <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>{routeStops.length > 0 ? routeStops[0].stop_name : 'Unknown Start Station'}</span>
                     <span style={{ margin: '0 8px' }}>→</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>Multiple stops</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{routeStops.length} stops</span>
                     <span style={{ margin: '0 8px' }}>→</span>
-                    <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{selectedRoute?.headsign || 'Unknown Destination'}</span>
+                  <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>
+                    {routeStops.length > 0 ? routeStops[routeStops.length - 1].stop_name : (selectedRoute?.headsign || 'Unknown Destination')}
+                  </span>
                   </div>
                 </div>
                 <button
-                  onClick={() => setShowRouteDetail(false)}
+                  onClick={() => console.log('Modal close clicked')}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -818,7 +1242,7 @@ function App() {
                     Route Map
                   </h3>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Route stops • {realtimeBuses.length} buses online
+                    Route stops • {routeStops.length} stops • {realtimeBuses.length} buses online
                   </div>
                 </div>
                 <div style={{
@@ -828,6 +1252,7 @@ function App() {
                   position: 'relative',
                   overflow: 'hidden'
                 }}>
+                  {routeStops.length === 0 && (
                   <div style={{
                     position: 'absolute',
                     top: '50%',
@@ -836,8 +1261,11 @@ function App() {
                     textAlign: 'center',
                     zIndex: 20
                   }}>
-                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Use Route Query to load route stops</p>
+                      <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                        Loading route stops...
+                      </p>
                   </div>
+                  )}
                   {/* Scrollable Route Container */}
                   <div style={{
                     height: '100%',
@@ -846,15 +1274,15 @@ function App() {
                     padding: '20px 0'
                   }}>
                     <div style={{
-                      width: '3800px',
-                      height: '200px', // Increase height to accommodate all elements
+                      width: `${Math.max(4000, routeStops.length * 260 + 100)}px`,
+                      height: '220px', // Increase height to accommodate two-line text
                       position: 'relative',
                       display: 'flex',
                       alignItems: 'center'
                     }}>
                       {/* Horizontal Route Line - From first to last stop */}
                       <div style={{
-                        width: '3600px', // From 50px (first stop) to 3650px (last stop)
+                        width: `${Math.max(3800, routeStops.length * 260 - 50)}px`,
                         height: '4px',
                         backgroundColor: 'var(--primary-blue)',
                         position: 'absolute',
@@ -863,23 +1291,38 @@ function App() {
                         transform: 'translateY(-50%)'
                       }}>
                         {/* Real-time bus position indicators */}
-                        {isRealtimeActive && realtimeBuses.map((bus) => {
-                          // Calculate bus position on route (pixels)
-                          const busPosition = 50 + (bus.progress / 100) * 3600;
+                        {(() => {
+                          console.log('Bus icons render check:', { isRealtimeActive, realtimeBusesLength: realtimeBuses.length, routeStopsLength: routeStops.length });
+                          return null;
+                        })()}
+                        {isRealtimeActive && realtimeBuses.length > 0 && realtimeBuses.map((bus) => {
+                          // Calculate bus position on route (pixels) based on progress
+                          // Use a fixed route length if routeStops is not loaded yet
+                          const routeLength = routeStops.length > 0 ? Math.max(3800, routeStops.length * 260 - 50) : 3800;
+                          const busPosition = 50 + (bus.progress / 100) * routeLength;
+                          
+                          console.log(`Bus ${bus.busId} position: ${busPosition}px (progress: ${bus.progress}%)`);
                           
                           return (
                             <div key={bus.busId} className={`bus-icon ${bus.status}`} style={{
                               position: 'absolute',
-                              top: '-35px',
+                              top: '-50px',
                               left: `${busPosition}px`,
-                              width: '32px',
-                              height: '32px',
+                              width: '40px',
+                              height: '40px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '24px',
-                              zIndex: 10,
-                              transform: 'scaleX(-1)'
+                              fontSize: '28px',
+                              zIndex: 20,
+                              transform: 'scaleX(-1)',
+                              backgroundColor: 'white',
+                              borderRadius: '50%',
+                              border: '3px solid var(--primary-blue)',
+                              boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                              animation: bus.status === 'moving' ? 'busMoving 2s infinite' : 
+                                        bus.status === 'stopped' ? 'busStopped 3s infinite' : 
+                                        bus.status === 'delayed' ? 'busDelayed 1.5s infinite' : 'none'
                             }}>
                               🚌
                             </div>
@@ -888,20 +1331,37 @@ function App() {
                         
                       </div>
                       
-                      {/* Route Stops - Placeholder for route stops */}
-                      {[].map((stop: any, index: number) => {
-                        const position = 50 + (index * 240); // Spread stops across the route line
-                        const isCurrent = stop.id === closestStop?.id;
-                        const isTransfer = stop.name.toLowerCase().includes('metro') || stop.name.toLowerCase().includes('station');
+                      {/* Route Stops - Display actual route stops */}
+                      {routeStops.map((stop: any, index: number) => {
+                        const position = 50 + (index * 260); // Spread stops across the route line
+                        const isCurrent = stop.stop_id === closestStop?.id;
+                        const isTransfer = stop.stop_name.toLowerCase().includes('metro') || 
+                                          stop.stop_name.toLowerCase().includes('station') ||
+                                          stop.stop_name.toLowerCase().includes('bus stop') ||
+                                          stop.is_transfer;
+                        console.log(`Stop ${stop.stop_name} - isTransfer: ${isTransfer}, transfer_routes:`, stop.transfer_routes);
+                        console.log(`Stop ${stop.stop_id} (${stop.stop_name}) - isCurrent: ${isCurrent}, closestStop.id: ${closestStop?.id}`);
                         
                         return (
-                        <div key={stop.id} style={{
+                        <div key={stop.stop_id} style={{
                           position: 'absolute',
                           left: `${position}px`,
                           top: '50%',
                           transform: 'translateY(-50%)',
                           textAlign: 'center',
-                          zIndex: isCurrent ? 10 : 5
+                          zIndex: isCurrent ? 10 : 5,
+                          cursor: 'pointer'
+                        }} onClick={() => {
+                          // Create a Stop object for navigation
+                          const stopForNavigation: Stop = {
+                            id: stop.stop_id,
+                            name: stop.stop_name,
+                            code: stop.stop_id,
+                            distance: 0, // Distance not available in route context
+                            lat: stop.stop_lat,
+                            lon: stop.stop_lon
+                          }
+                          navigateToStopDetail(stopForNavigation)
                         }}>
                           {/* Stop Marker - Exactly on the route line */}
                           <div style={{
@@ -921,62 +1381,92 @@ function App() {
                             zIndex: 6
                           }}></div>
                           
-                          {/* Stop Name - Vertical text below the route line */}
+                          {/* Current Station Label */}
+                          {isCurrent && (
                           <div style={{
-                            fontSize: '12px', // Increase font size
+                              position: 'absolute',
+                              top: '-25px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              backgroundColor: 'var(--success)',
+                              color: 'white',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '8px',
+                              fontWeight: 'bold',
+                              zIndex: 7,
+                              whiteSpace: 'nowrap'
+                            }}>
+                              CURRENT
+                            </div>
+                          )}
+                          
+                          {/* Stop Name - Two column text below the route line */}
+                          <div style={{
+                            fontSize: '11px',
                             color: isCurrent ? 'var(--success)' : 'var(--text-primary)',
-                            fontWeight: 'bold', // Always bold
-                            marginTop: '25px', // Move further down to avoid bus icon
+                            fontWeight: 'bold',
+                            marginTop: '25px',
                             backgroundColor: 'rgba(255,255,255,0.95)',
-                            padding: '4px 2px',
+                            padding: '6px 4px',
                             borderRadius: '4px',
-                            border: 'none', // Remove border
-                            writingMode: 'vertical-rl',
-                            textOrientation: 'mixed',
-                            whiteSpace: 'nowrap',
-                            minHeight: '50px',
+                            border: 'none',
+                            minHeight: '60px',
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            maxWidth: '60px',
+                            maxWidth: '80px',
                             position: 'absolute',
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, 0)',
-                            zIndex: 4
+                            zIndex: 4,
+                            textAlign: 'center',
+                            lineHeight: '1.2'
                           }}>
-                            {stop.name}
+                            {stop.stop_name.split(' ').map((word: string, wordIndex: number) => (
+                              <div key={wordIndex} style={{ marginBottom: '2px' }}>
+                                {word}
+                              </div>
+                            ))}
                           </div>
                           
-                          {/* Transfer Info - Simplified for real data */}
-                          {isTransfer && (
+                          {/* Transfer Info - Show transfer routes */}
+                          {isTransfer && stop.transfer_routes && stop.transfer_routes.length > 0 && (
                             <div style={{
-                              fontSize: '8px',
+                              fontSize: '9px',
                               fontWeight: 'bold',
-                              marginTop: '25px', // Same level as station name
+                              marginTop: '25px',
                               backgroundColor: 'var(--warning)',
                               color: 'white',
-                              padding: '1px 2px', // Reduce top and bottom padding
-                              borderRadius: '3px',
+                              padding: '4px 6px',
+                              borderRadius: '4px',
                               display: 'flex',
-                              flexDirection: 'column', // Vertical layout
-                              gap: '1px',
+                              flexDirection: 'column',
+                              gap: '2px',
                               alignItems: 'center',
                               justifyContent: 'center',
                               position: 'absolute',
                               top: '50%',
                               left: '50%',
-                              transform: 'translate(30px, 0)', // Move to the right of station name
+                              transform: 'translate(50px, 0)',
                               zIndex: 4,
-                              maxWidth: '30px',
-                              minHeight: '50px' // Reduce minHeight
-                            }}>
-                              <div style={{
+                              maxWidth: '60px',
+                              minHeight: '40px',
                                 textAlign: 'center',
-                                lineHeight: '1.2'
+                              lineHeight: '1.1'
                               }}>
-                                {stop.code}
+                              {stop.transfer_routes.slice(0, 3).map((route: any, routeIndex: number) => (
+                                <div key={routeIndex} style={{ fontSize: '8px' }}>
+                                  {route.route}
                               </div>
+                              ))}
+                              {stop.transfer_routes.length > 3 && (
+                                <div style={{ fontSize: '7px' }}>
+                                  +{stop.transfer_routes.length - 3}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1038,7 +1528,7 @@ function App() {
                     </div>
                     <div>
                       <strong>Total Stops:</strong><br />
-                      <span style={{ color: 'var(--text-secondary)' }}>Use Route Query to see stops</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{routeStops.length} stops</span>
                     </div>
                     <div>
                       <strong>Destination:</strong><br />
@@ -1052,6 +1542,106 @@ function App() {
                     </div>
                   </div>
                 </div>
+
+                {/* Route Stops List */}
+                {routeStops.length > 0 && (
+                  <div style={{ marginTop: '20px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', color: 'var(--primary-blue)' }}>
+                      Route Stops ({routeStops.length} stops)
+                    </h4>
+                    <div style={{ 
+                      backgroundColor: 'var(--light-gray)', 
+                      borderRadius: '8px', 
+                      padding: '16px',
+                      maxHeight: '300px',
+                      overflowY: 'auto'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {routeStops.map((stop, index) => (
+                          <div key={`${stop.stop_id}-${index}`} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '12px',
+                            backgroundColor: 'white',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color)',
+                            position: 'relative'
+                          }}>
+                            {/* Stop sequence number */}
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              backgroundColor: 'var(--primary-blue)',
+                              color: 'white',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              marginRight: '12px',
+                              flexShrink: 0
+                            }}>
+                              {stop.stop_sequence || index + 1}
+                            </div>
+                            
+                            {/* Stop information */}
+                            <div style={{ flex: 1 }}>
+                              <div style={{ 
+                                fontWeight: 'bold', 
+                                color: 'var(--text-primary)',
+                                marginBottom: '4px'
+                              }}>
+                                {stop.stop_name}
+                              </div>
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: 'var(--text-secondary)',
+                                display: 'flex',
+                                gap: '12px'
+                              }}>
+                                <span>ID: {stop.stop_id}</span>
+                                <span>Lat: {stop.stop_lat?.toFixed(4)}</span>
+                                <span>Lon: {stop.stop_lon?.toFixed(4)}</span>
+                              </div>
+                              {stop.is_transfer && (
+                                <div style={{
+                                  fontSize: '11px',
+                                  color: 'var(--warning)',
+                                  backgroundColor: '#fef3c7',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  marginTop: '4px',
+                                  display: 'inline-block'
+                                }}>
+                                  Transfer Station
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Current station indicator */}
+                            {stop.stop_id === closestStop?.id && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '-8px',
+                                right: '-8px',
+                                backgroundColor: 'var(--success)',
+                                color: 'white',
+                                fontSize: '10px',
+                                fontWeight: 'bold',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                zIndex: 10
+                              }}>
+                                CURRENT
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Real-time Bus Status Panel */}
                 {isRealtimeActive && (
@@ -1144,7 +1734,7 @@ function App() {
         {/* Closest Station Section */}
         {closestStop && (
           <div className="card" style={{ margin: '20px' }}>
-            <div className="card-header">
+            <div className="card-header" style={{ cursor: 'pointer' }} onClick={() => navigateToStopDetail(closestStop)}>
               📍 Closest Station - {closestStop.name}
             </div>
             <div style={{ padding: '20px' }}>
@@ -1154,11 +1744,38 @@ function App() {
                       {closestStop.name}
                     </h3>
                   <p style={{ color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>
-                    Code: {closestStop.code} • Distance: {closestStop.distance}km
+                    Code: {closestStop.code} • Distance: {closestStop.distance ? Math.round(closestStop.distance) : 0}m
+                    {userLocation?.accuracy && (
+                      <span style={{ marginLeft: '10px', fontSize: '12px' }}>
+                        • Accuracy: {Math.round(userLocation.accuracy)}m
+                      </span>
+                    )}
                   </p>
                 </div>
-                <div className="realtime-indicator">
-                  Auto-updating
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                  <div className="realtime-indicator">
+                    Auto-updating
+                  </div>
+                    <button
+                    onClick={() => getCurrentLocation(true)}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        backgroundColor: 'var(--primary-blue)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                      cursor: 'pointer',
+                      marginLeft: '8px'
+                      }}
+                    >
+                    🔄 Refresh GPS
+                    </button>
+                  {userLocation?.accuracy && userLocation.accuracy > 200 && (
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      ⚠️ Low location accuracy, recommend refreshing
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1169,17 +1786,129 @@ function App() {
                 <div>No upcoming departures for this stop.</div>
               )}
               {!isLoading && !error && departures.length > 0 && (
-                <ul className="grid gap-2">
-                  {departures.map((route, index) => (
-                    <li key={index} className="border rounded p-3">
-                      <div className="font-medium">
-                        {route.route} → {route.headsign}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: '16px',
+                  marginTop: '16px'
+                }}>
+                  {departures.map((route) => (
+                    <div key={`${route.route}-${route.headsign}`} style={{
+                      backgroundColor: 'white',
+                      borderRadius: '12px',
+                      padding: '20px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      border: '1px solid #e5e7eb',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                    }}
+         onClick={() => {
+           console.log('=== Route clicked ===')
+           console.log('Route object:', route)
+           navigateToRouteDetail(route)
+         }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                      e.currentTarget.style.boxShadow = '0 8px 15px rgba(0, 0, 0, 0.15)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}>
+                      {/* Route Number Badge */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '16px',
+                        left: '16px',
+                        backgroundColor: 'var(--primary-blue)',
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}>
+                        {route.route || 'Unknown'}
                       </div>
-                      <div>Departs {route.nextDeparture.scheduled} ({route.nextDeparture.etaMin} min)</div>
-                      <div className="text-sm opacity-70">{route.allDepartures.length} departures in next 2 hours</div>
-                    </li>
+                      
+                      {/* Status Badge */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '16px',
+                        right: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '12px',
+                        color: '#10B981',
+                        fontWeight: 'bold'
+                      }}>
+                        <span>✓</span>
+                        <span>ON TIME</span>
+                      </div>
+                      
+                      {/* Destination */}
+                      <div style={{
+                        marginTop: '40px',
+                        marginBottom: '8px'
+                      }}>
+                        <div style={{
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          color: 'var(--text-primary)',
+                          marginBottom: '4px'
+                        }}>
+                          To: {route.headsign || 'Unknown Destination'}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: 'var(--text-muted)'
+                        }}>
+                          Unknown • Platform Unknown
+                        </div>
+                      </div>
+                      
+                      {/* Departures Count */}
+                      <div style={{
+                        fontSize: '12px',
+                        color: 'var(--text-muted)',
+                        marginBottom: '16px'
+                      }}>
+                        {route.allDepartures.length} departures in next 2 hours
+                      </div>
+                      
+                      {/* Next Departure ETA */}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div style={{
+                          fontSize: '24px',
+                          fontWeight: 'bold',
+                          color: route.nextDeparture.etaMin <= 5 ? '#dc2626' : '#f59e0b', // 5分钟内红色，其他黄色
+                          backgroundColor: '#f0f9ff', // 更浅的蓝色背景
+                          padding: '8px 16px',
+                          borderRadius: '20px',
+                          border: '2px solid var(--primary-blue)', // 主题色边框
+                          animation: route.nextDeparture.etaMin <= 5 ? 'pulse 1s infinite' : 'none',
+                          transform: route.nextDeparture.etaMin <= 5 ? 'scale(1.05)' : 'scale(1)',
+                          transition: 'all 0.3s ease',
+                          opacity: route.nextDeparture.etaMin <= 5 ? 0.8 : 1
+                        }}>
+                          {route.nextDeparture.etaMin === 0 ? 'Now' : `${route.nextDeparture.etaMin} min`}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: 'var(--text-muted)',
+                          textAlign: 'right'
+                        }}>
+                          Next: {route.nextDeparture.scheduled}
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           </div>
@@ -1287,7 +2016,7 @@ function App() {
                         </div>
                         <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
                           {item.type === 'station' 
-                            ? `Code: ${item.code} • Distance: ${item.distance}km`
+                            ? `Code: ${item.code} • Distance: ${item.distance ? Math.round(item.distance) : 0}m`
                             : `Bus Route • Multiple stops`
                           }
                         </p>
@@ -1333,7 +2062,8 @@ function App() {
                                 nextDeparture: { etaMin: 0, scheduled: 'N/A', status: 'ON_TIME', direction: 'TO_DUBAI', platform: 'N/A', realtime: false, currentStop: 'N/A', nextStop: 'N/A' },
                                 allDepartures: []
                               })
-                              setShowRouteDetail(true)
+                              // Navigate to stop detail page instead of opening modal
+                              console.log('Route detail requested for route:', item.id)
                             }}
                             className="btn-primary"
                             style={{ minWidth: 'auto', fontSize: '12px' }}
@@ -1509,6 +2239,369 @@ function App() {
         isOpen={isRouteQueryOpen} 
         onClose={() => setIsRouteQueryOpen(false)} 
       />
+
+      {/* Route Detail Modal - Removed, using page routing instead */}
+      {false && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            maxWidth: '800px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            position: 'relative'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '20px',
+              borderBottom: '1px solid var(--border-light)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <h2 style={{ 
+                  color: 'var(--primary-blue)', 
+                  margin: 0, 
+                  fontSize: '24px',
+                  fontWeight: 'bold'
+                }}>
+                  Route {selectedRoute.route}
+                </h2>
+                <p style={{ 
+                  color: 'var(--text-secondary)', 
+                  margin: '4px 0 0 0',
+                  fontSize: '16px'
+                }}>
+                  To: {selectedRoute.headsign}
+                </p>
+                <div style={{
+                  marginTop: '8px',
+                  fontSize: '14px',
+                  color: 'var(--text-muted)'
+                }}>
+                  <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>Route {selectedRoute?.route || 'Unknown'}</span>
+                  <span style={{ margin: '0 8px' }}>→</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{routeStops.length} stops</span>
+                  <span style={{ margin: '0 8px' }}>→</span>
+                  <span style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{selectedRoute?.headsign || 'Unknown Destination'}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => console.log('Modal close clicked')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  padding: '8px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Route Map Section */}
+            <div style={{ padding: '20px' }}>
+              <h3 style={{ 
+                color: 'var(--primary-blue)', 
+                margin: '0 0 16px 0',
+                fontSize: '18px'
+              }}>
+                Route Map
+              </h3>
+              
+              {/* Loading State */}
+              {routeStops.length === 0 && (
+                <div style={{
+                  position: 'relative',
+                  height: '200px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '8px',
+                  border: '2px dashed #e2e8f0'
+                }}>
+                  <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                    Loading route stops...
+                  </p>
+                </div>
+              )}
+              
+              {/* Route Map */}
+              {routeStops.length > 0 && (
+                <div style={{
+                  position: 'relative',
+                  height: '200px',
+                  margin: '20px 0',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '8px',
+                  overflow: 'hidden'
+                }}>
+                    {/* Scrollable Route Container */}
+                    <div style={{
+                      height: '100%',
+                      overflowX: 'auto',
+                      overflowY: 'hidden',
+                      padding: '20px 0'
+                    }}>
+                      <div style={{
+                        width: `${Math.max(1200, routeStops.length * 120 + 200)}px`,
+                        height: '160px',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}>
+                      {/* Horizontal Route Line */}
+                      <div style={{
+                        width: `${Math.max(1000, routeStops.length * 120 - 50)}px`,
+                        height: '6px',
+                        backgroundColor: 'var(--primary-blue)',
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50px',
+                        transform: 'translateY(-50%)',
+                        borderRadius: '3px'
+                      }}>
+                        {/* Real-time bus position indicators */}
+                        {isRealtimeActive && realtimeBuses.map((bus) => {
+                          const routeLength = Math.max(1000, routeStops.length * 120 - 50);
+                          const busPosition = 50 + (bus.progress / 100) * routeLength;
+                          
+                          return (
+                            <div key={bus.busId} className={`bus-icon ${bus.status}`} style={{
+                              position: 'absolute',
+                              top: '-35px',
+                              left: `${busPosition}px`,
+                              width: '32px',
+                              height: '32px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '24px',
+                              zIndex: 10,
+                              transform: 'scaleX(-1)',
+                              animation: bus.status === 'moving' ? 'bounce 1s infinite' : 'none'
+                            }}>
+                              🚌
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Route Stops */}
+                      {routeStops.map((stop: any, index: number) => {
+                        const position = 50 + (index * 120);
+                        const isCurrent = stop.stop_id === closestStop?.id;
+                        const isTransfer = stop.is_transfer || stop.stop_name.toLowerCase().includes('metro') || stop.stop_name.toLowerCase().includes('station');
+                        const isFirst = index === 0;
+                        const isLast = index === routeStops.length - 1;
+                        
+                        // Debug logging
+                        if (isCurrent) {
+                          console.log('Current stop found:', { stopId: stop.stop_id, closestStopId: closestStop?.id, stopName: stop.stop_name });
+                        }
+                        
+                        return (
+                          <div key={stop.stop_id} style={{
+                            position: 'absolute',
+                            left: `${position}px`,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            textAlign: 'center',
+                            zIndex: isCurrent ? 10 : 5
+                          }}>
+                            {/* Stop Marker */}
+                            <div style={{
+                              width: isCurrent ? '20px' : '16px',
+                              height: isCurrent ? '20px' : '16px',
+                              backgroundColor: isCurrent ? '#10b981' : // Green for current station
+                                             isTransfer ? '#f59e0b' : // Orange for transfer stations
+                                             'var(--primary-blue)', // Theme blue for regular stations
+                              borderRadius: '50%',
+                              margin: '0 auto',
+                              border: isCurrent ? '3px solid white' : '2px solid white',
+                              boxShadow: isCurrent ? '0 4px 12px rgba(16, 185, 129, 0.4)' : 
+                                         isTransfer ? '0 2px 8px rgba(245, 158, 11, 0.3)' : 
+                                         '0 2px 6px rgba(37, 99, 235, 0.3)',
+                              animation: isCurrent ? 'pulse 2s infinite' : 'none',
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              zIndex: 6
+                            }}></div>
+                            
+                            {/* Station Type Label */}
+                            <div style={{
+                              fontSize: '8px',
+                              fontWeight: 'bold',
+                              color: isCurrent ? '#10b981' : 
+                                     isTransfer ? '#f59e0b' : '#3b82f6',
+                              marginTop: '-8px',
+                              marginBottom: '4px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.5px'
+                            }}>
+                              {isFirst ? 'START' : isLast ? 'END' : isTransfer ? 'TRANSFER' : 'STATION'}
+                            </div>
+                            
+                       {/* Stop Name */}
+                       <div style={{
+                         fontSize: '11px',
+                         color: isCurrent ? '#10b981' : '#374151',
+                         fontWeight: isCurrent ? 'bold' : '600',
+                         marginTop: '20px',
+                         backgroundColor: 'rgba(255,255,255,0.95)',
+                         padding: '6px 4px',
+                         borderRadius: '6px',
+                         border: isCurrent ? '2px solid #10b981' : '1px solid #e5e7eb',
+                         writingMode: 'vertical-rl',
+                         textOrientation: 'mixed',
+                         wordBreak: 'break-word',
+                         whiteSpace: 'normal',
+                         minHeight: '60px',
+                         display: 'flex',
+                         alignItems: 'center',
+                         justifyContent: 'center',
+                         maxWidth: '70px',
+                         position: 'absolute',
+                         top: '50%',
+                         left: '50%',
+                         transform: 'translate(-50%, 0)',
+                         zIndex: 4,
+                         boxShadow: isCurrent ? '0 4px 12px rgba(16, 185, 129, 0.2)' : '0 2px 4px rgba(0,0,0,0.1)'
+                       }}>
+                         {stop.stop_name}
+                       </div>
+                       
+                       {/* Transfer Routes for Transfer Stations */}
+                       {isTransfer && stop.transfer_routes && stop.transfer_routes.length > 0 && (
+                         <div style={{
+                           position: 'absolute',
+                           top: '50%',
+                           left: '50%',
+                           transform: 'translate(-50%, 120px)',
+                           zIndex: 5,
+                           backgroundColor: 'rgba(245, 158, 11, 0.9)',
+                           color: 'white',
+                           padding: '4px 8px',
+                           borderRadius: '12px',
+                           fontSize: '9px',
+                           fontWeight: 'bold',
+                           textAlign: 'center',
+                           minWidth: '60px',
+                           boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+                         }}>
+                           <div style={{ marginBottom: '2px' }}>Transfer</div>
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                             {stop.transfer_routes.slice(0, 3).map((route: any, idx: number) => (
+                               <div key={idx} style={{ fontSize: '8px' }}>
+                                 {route.route} → {route.destination}
+                               </div>
+                             ))}
+                             {stop.transfer_routes.length > 3 && (
+                               <div style={{ fontSize: '7px', opacity: 0.8 }}>
+                                 +{stop.transfer_routes.length - 3} more
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Legend */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '10px',
+                    left: '10px',
+                    right: '10px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: '20px',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    backdropFilter: 'blur(4px)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: '#10b981'
+                      }}></div>
+                      <span>Current</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: '#f59e0b'
+                      }}></div>
+                      <span>Transfer</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--primary-blue)'
+                      }}></div>
+                      <span>Regular</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ fontSize: '16px' }}>🚌</div>
+                      <span>Bus</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '12px',
+                        backgroundColor: 'rgba(245, 158, 11, 0.9)'
+                      }}></div>
+                      <span>Transfer Routes</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Route Info */}
+              <div style={{
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                textAlign: 'center',
+                marginTop: '10px'
+              }}>
+                Route stops • {routeStops.length} stops • {realtimeBuses.length} buses online
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
   } catch (error) {

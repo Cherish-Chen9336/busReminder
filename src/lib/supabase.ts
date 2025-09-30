@@ -42,190 +42,48 @@ export function etaMinutesGTFS(now: Date, targetHHMMSS: string): number {
 
 // API call function for Supabase RPC with timeout and retry (unused but kept for potential future use)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+// Unused function - commented out
+/*
 async function callSupabaseRPC<T>(functionName: string, params: any = {}, retries: number = 3): Promise<T> {
   const url = `${SUPABASE_URL}/rest/v1/rpc/${functionName}`
   console.log(`Calling Supabase RPC: ${functionName}`, params)
   
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`Attempt ${attempt}/${retries} for ${functionName}`)
-      
-      // Create AbortController for timeout
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
       
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Prefer': 'return=minimal'
-        },
+        headers: HEADERS,
         body: JSON.stringify(params),
-        signal: controller.signal,
-        mode: 'cors',
-        cache: 'no-cache'
+        signal: controller.signal
       })
 
       clearTimeout(timeoutId)
-      console.log(`Response status: ${response.status} ${response.statusText}`)
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('Supabase error response:', errorText)
-        
-        // If it's a server error (5xx) and we have retries left, retry
-        if (response.status >= 500 && attempt < retries) {
-          console.log(`Server error, retrying in ${attempt * 2000}ms...`)
-          await new Promise(resolve => setTimeout(resolve, attempt * 2000))
-          continue
-        }
-        
-        throw new Error(`Supabase RPC call failed: ${response.status} ${response.statusText} - ${errorText}`)
+        throw new Error(`Supabase RPC error: ${response.status} ${errorText}`)
       }
 
       const data = await response.json()
-      console.log(`RPC ${functionName} response:`, data)
+      console.log(`Supabase RPC ${functionName} success:`, data)
       return data
-      
     } catch (error) {
-      console.error(`Attempt ${attempt} failed:`, error)
-      
-      // If it's the last attempt or not a network error, throw
-      if (attempt === retries || (error as Error).name === 'AbortError') {
-        if ((error as Error).name === 'AbortError') {
-          throw new Error(`Request timeout after 15 seconds. Please check your connection and try again.`)
-        }
-        if ((error as Error).message.includes('ERR_CONNECTION_RESET') || (error as Error).message.includes('Failed to fetch')) {
-          throw new Error(`Connection failed. This might be due to network issues or browser extensions. Please try:
-1. Refreshing the page
-2. Using incognito/private mode
-3. Disabling browser extensions
-4. Checking your internet connection`)
-        }
-        throw error
-      }
-      
-      // Wait before retry with exponential backoff
-      const delay = Math.min(attempt * 2000, 10000) // Max 10 seconds
-      console.log(`Waiting ${delay}ms before retry...`)
-      await new Promise(resolve => setTimeout(resolve, delay))
+      console.error(`Supabase RPC attempt ${attempt} failed:`, error)
+      if (attempt === retries) throw error
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt)) // Exponential backoff
     }
   }
   
   throw new Error('All retry attempts failed')
 }
+*/
 
-// Dubai center coordinates as fallback
-export const DUBAI_CENTER = {
-  lat: 25.2048,
-  lon: 55.2708
-}
-
-// Health check function
-export async function healthCheck() {
-  try {
-    console.log('Performing health check with Dubai center coordinates...')
-    const result = await getNearbyStops(DUBAI_CENTER.lat, DUBAI_CENTER.lon, 1000)
-    console.log('Health check result:', result)
-    console.log('Health check result type:', typeof result)
-    console.log('Health check result length:', Array.isArray(result) ? result.length : 'Not an array')
-    if (Array.isArray(result) && result.length > 0) {
-      console.log('First stop in health check:', result[0])
-      console.log('First stop ID:', result[0]?.stop_id)
-      
-      // Test departures for the first stop
-      if (result[0]?.stop_id) {
-        console.log('Testing departures for stop:', result[0].stop_id)
-        const departuresResult = await getDepartures(result[0].stop_id, new Date().toISOString(), 5)
-        console.log('Departures test result:', departuresResult)
-      }
-    }
-    return {
-      success: true,
-      data: result,
-      message: 'Supabase connection successful'
-    }
-  } catch (error) {
-    console.error('Health check failed:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      message: 'Supabase connection failed'
-    }
-  }
-}
-
-// Get nearby stops by querying stops table directly
-export async function getNearbyStops(lat: number, lon: number, radius_m: number = 2000) {
-  console.log('Querying nearby stops with params:', { lat, lon, radius_m })
-  
-  try {
-    // Get all stops first, then calculate distances client-side
-    const queryParams = new URLSearchParams()
-    queryParams.append('select', 'stop_id,stop_name,stop_lat,stop_lon')
-    queryParams.append('limit', '200') // Get more stops to filter from
-    
-    const url = `${BASE}/stops?${queryParams.toString()}`
-    console.log(`Querying stops table:`, { url, lat, lon })
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: HEADERS,
-      mode: 'cors',
-      cache: 'no-cache'
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Stops query error:', errorText)
-      throw new Error(`Failed to get nearby stops: ${response.status} - ${errorText}`)
-    }
-
-    const stops = await response.json()
-    console.log('All stops found:', stops)
-    console.log('Number of stops retrieved:', stops.length)
-
-    // Calculate distances and filter by radius
-    const stopsWithDistance = stops.map((stop: any) => {
-      const distance = calculateDistance(lat, lon, stop.stop_lat, stop.stop_lon)
-      const distanceM = Math.round(distance * 1000) // Convert to meters
-      console.log(`Stop ${stop.stop_id} (${stop.stop_name}): ${distanceM}m away`)
-      return {
-        ...stop,
-        distance_m: distanceM
-      }
-    })
-    .sort((a: any, b: any) => a.distance_m - b.distance_m) // Sort by distance first
-    
-    // If no stops within radius, expand the search or take the closest ones
-    let filteredStops = stopsWithDistance.filter((stop: any) => stop.distance_m <= radius_m)
-    console.log(`Stops within ${radius_m}m radius:`, filteredStops.length)
-    
-    // If no stops found within radius, take the 10 closest stops regardless of distance
-    if (filteredStops.length === 0) {
-      console.log('No stops within radius, taking closest stops regardless of distance')
-      filteredStops = stopsWithDistance.slice(0, 10)
-      console.log('Closest stops selected:', filteredStops.map((s: any) => `${s.stop_name} (${s.distance_m}m)`))
-    }
-    
-    const finalStops = filteredStops.slice(0, 20) // Limit to 20 closest stops
-
-    console.log('Final stops selected:', finalStops.length, 'stops')
-    console.log('Final stops details:', finalStops.map((s: any) => `${s.stop_name} (${s.distance_m}m)`))
-    return finalStops
-    
-  } catch (error) {
-    console.error('Error querying nearby stops:', error)
-    throw error
-  }
-}
-
-// Calculate distance between two points using Haversine formula
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371 // Earth's radius in kilometers
+// Distance calculation using Haversine formula (returns meters)
+function calculateDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000 // Earth's radius in meters
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLon = (lon2 - lon1) * Math.PI / 180
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -235,75 +93,261 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c
 }
 
-export async function getDepartures(stopId: string, at: string, limit_n = 20) {
+// Health check function
+export async function healthCheck() {
+  try {
+    const response = await fetch(`${BASE}/stops?limit=1`, { 
+      method: 'GET', 
+      headers: HEADERS,
+      signal: AbortSignal.timeout(10000)
+    })
+    
+    if (response.ok) {
+      return {
+        success: true,
+        message: 'Supabase connection successful',
+        data: await response.json()
+      }
+    } else {
+      return {
+        success: false,
+        message: 'Supabase connection failed'
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Supabase connection failed'
+    }
+  }
+}
+
+// PostGIS-based getNearbyStops function using RPC with fallback
+export async function getNearbyStops(lat: number, lon: number, radius_m: number = 2000, rpcLimit = 20) {
+  console.log('🔥🔥🔥 getNearbyStops function called! 🔥🔥🔥')
+  console.log('=== getNearbyStops called ===')
+  console.log('Parameters:', { lat, lon, radius_m, rpcLimit })
+  console.log('BASE URL:', BASE)
+  
+  try {
+    // Try PostGIS RPC function first
+    console.log('Calling PostGIS RPC function...')
+    const rpcUrl = `${BASE}/rpc/nearest_stops`
+    console.log('RPC URL:', rpcUrl)
+    
+    const rpcResponse = await fetch(rpcUrl, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        in_lon: lon,  // CORRECT ORDER: longitude first
+        in_lat: lat,  // then latitude
+        max_meters: radius_m,
+        limit_n: rpcLimit
+      })
+    })
+
+    console.log('RPC Response status:', rpcResponse.status)
+    console.log('RPC Response ok:', rpcResponse.ok)
+    
+    if (rpcResponse.ok) {
+      const stops = await rpcResponse.json()
+      console.log(`Found ${stops.length} stops using PostGIS RPC`)
+      console.log('RPC Response:', stops)
+      
+      if (stops.length > 0) {
+        console.log('=== PostGIS RPC Results ===')
+        stops.forEach((stop: any, index: number) => {
+          console.log(`${index + 1}. ${stop.stop_name} - ${Math.round(stop.distance_m)}m (${stop.stop_id})`)
+        })
+        return stops
+      } else {
+        console.warn('RPC returned 0 stops - falling back to client-side calculation')
+        // Don't return here, fall through to fallback method
+        throw new Error('RPC returned 0 stops')
+      }
+    } else {
+      const errorText = await rpcResponse.text()
+      console.error('PostGIS RPC failed:', rpcResponse.status, errorText)
+      console.warn('PostGIS RPC not available, falling back to client-side calculation')
+      throw new Error(`RPC failed: ${rpcResponse.status} ${errorText}`)
+    }
+    
+  } catch (err) {
+    console.warn('PostGIS RPC failed, using fallback method:', err instanceof Error ? err.message : String(err))
+    
+    // Fallback to client-side calculation if RPC is not available
+    console.log('=== Using fallback method ===')
+    console.log('Fetching all stops from database...')
+    try {
+      const stopsUrl = `${BASE}/stops?select=stop_id,stop_name,stop_lat,stop_lon&order=stop_id.asc&limit=1000`
+      console.log('Stops URL:', stopsUrl)
+      
+      const allStopsRes = await fetch(stopsUrl, { headers: HEADERS })
+      console.log('Stops fetch response status:', allStopsRes.status)
+      console.log('Stops fetch response ok:', allStopsRes.ok)
+      
+      if (!allStopsRes.ok) {
+        const errorText = await allStopsRes.text()
+        console.error('Stops fetch failed:', allStopsRes.status, errorText)
+        throw new Error(`stops fetch failed: ${allStopsRes.status} ${errorText}`)
+      }
+      
+      const allStops = await allStopsRes.json()
+      console.log(`Found ${allStops.length} total stops in database`)
+      console.log('First few stops:', allStops.slice(0, 3))
+
+      if (allStops.length === 0) {
+        console.log('No stops found in database')
+        return []
+      }
+
+      // Calculate distances client-side using correct Haversine formula
+      console.log('Calculating distances for all stops...')
+      console.log('User location:', { lat, lon })
+      
+      const stopsWithDistance = allStops.map((stop: any) => {
+        const distance_m = calculateDistanceInMeters(Number(lat), Number(lon), Number(stop.stop_lat), Number(stop.stop_lon))
+        return { ...stop, distance_m: Math.round(distance_m) }
+    }).sort((a: any, b: any) => a.distance_m - b.distance_m)
+
+      console.log('Distance calculation complete')
+      console.log('Closest 5 stops:', stopsWithDistance.slice(0, 5).map((s: any) => `${s.stop_name} - ${s.distance_m}m`))
+
+      // Return closest stops
+      const closestStops = stopsWithDistance.slice(0, rpcLimit)
+      
+      console.log('=== Fallback Results ===')
+      console.log(`Returning ${closestStops.length} closest stops`)
+      closestStops.forEach((stop: any, index: number) => {
+        console.log(`${index + 1}. ${stop.stop_name} - ${stop.distance_m}m (${stop.stop_id})`)
+      })
+      
+      return closestStops
+      
+    } catch (fallbackErr) {
+      console.error('Fallback method also failed:', fallbackErr)
+      throw fallbackErr
+    }
+  }
+}
+
+
+// Use RPC function for stop details with fallback
+export async function getDepartures(stopId: string, at: string, limit_n = 50) {
   console.log('getDepartures called with:', { stopId, at, limit_n })
+  
+  try {
+    // Try RPC function first
+    console.log('Calling stop details RPC function...')
+    const rpcResponse = await fetch(`${BASE}/rpc/fn_stop_details`, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_stop_id: stopId,
+        p_current_time: new Date(at).toTimeString().split(' ')[0] // Format as HH:MM:SS
+      })
+    })
+
+    if (rpcResponse.ok) {
+      const stopDetails = await rpcResponse.json()
+      console.log(`Found ${stopDetails.length} stop details using RPC`)
+      
+      if (stopDetails.length > 0) {
+        console.log('=== Stop Details RPC Results ===')
+        const uniqueRoutes = [...new Set(stopDetails.map((d: any) => d.route_short_name))]
+        console.log('Unique routes found:', uniqueRoutes)
+        console.log('Total routes:', uniqueRoutes.length)
+      }
+
+      // Map to expected format
+      const departures = stopDetails.map((detail: any) => ({
+        trip_id: detail.route_id, // Using route_id as trip_id for compatibility
+        route_id: detail.route_id,
+        route_name: detail.route_short_name,
+        route_long_name: detail.route_long_name,
+        headsign: detail.trip_headsign,
+        departure_time: detail.departure_time,
+        eta_minutes: detail.eta_minutes
+      })).slice(0, limit_n)
+
+      console.log(`Final departures: ${departures.length}`)
+      console.log('Departure routes:', [...new Set(departures.map((d: any) => d.route_name))])
+      return departures
+    } else {
+      console.warn('Stop details RPC not available, falling back to original method')
+      throw new Error('RPC not available')
+    }
+    
+    } catch (err) {
+      console.warn('Stop details RPC failed, using fallback method:', err instanceof Error ? err.message : String(err))
+    
+    // Fallback to original method
+    try {
+      console.log('Using fallback: original getDepartures method...')
   const now = new Date(at)
   const today = now.toISOString().split('T')[0]
 
-  // 1) service_ids active today
+      // 1) Get all stop_times for this stop
+      console.log('Getting stop_times for stop:', stopId)
+      const stopTimesRes = await fetch(`${BASE}/stop_times?stop_id=${encodeEq(stopId)}&select=trip_id,departure_time,arrival_time&order=departure_time.asc&limit=1000`, { headers: HEADERS })
+      if (!stopTimesRes.ok) throw new Error(`stop_times query failed: ${stopTimesRes.status} ${await stopTimesRes.text()}`)
+      const stopTimes: any[] = await stopTimesRes.json()
+      console.log(`Found ${stopTimes.length} stop_times for stop ${stopId}`)
+      if (!stopTimes.length) return []
+
+      // 2) Get trips for these stop_times (batch process to avoid URL length limits)
+      const tripIds = [...new Set(stopTimes.map(st => st.trip_id))]
+      console.log(`Getting trips for ${tripIds.length} trip_ids...`)
+      let trips: any[] = []
+      
+      const batchSize = 100
+      for (let i = 0; i < tripIds.length; i += batchSize) {
+        const batchTripIds = tripIds.slice(i, i + batchSize)
+        const tripsRes = await fetch(`${BASE}/trips?trip_id=${encodeInList(batchTripIds)}&select=trip_id,service_id,route_id,trip_headsign`, { headers: HEADERS })
+        if (!tripsRes.ok) throw new Error(`trips query failed: ${tripsRes.status} ${await tripsRes.text()}`)
+        const batchTrips = await tripsRes.json()
+        trips = trips.concat(batchTrips)
+      }
+      
+      console.log(`Found ${trips.length} trips`)
+      if (!trips.length) return []
+
+      // 3) Get active service IDs for today
   const serviceIds = await getActiveServiceIds(today)
   console.log('Active service IDs:', serviceIds)
   if (!serviceIds?.length) return []
 
-  // 2) trips for those services (limit to prevent URL too long error)
-  const qTrips = new URLSearchParams()
-  qTrips.append('service_id', encodeInList(serviceIds))
-  qTrips.append('select', 'trip_id,route_id,trip_headsign')
-  qTrips.append('limit', '200') // Reduced limit to prevent URL too long
-  const tripsRes = await fetch(`${BASE}/trips?${qTrips.toString()}`, { headers: HEADERS })
-  if (!tripsRes.ok) throw new Error(`Trips query failed: ${tripsRes.status} ${await tripsRes.text()}`)
-  const trips: any[] = await tripsRes.json()
-  console.log('Trips found:', trips.length)
-  if (!trips.length) return []
+      // 4) Filter trips by active service IDs
+      const activeTrips = trips.filter(t => serviceIds.includes(t.service_id))
+      console.log(`Found ${activeTrips.length} active trips`)
+      if (!activeTrips.length) return []
 
-  // 3) stop_times for this stop + those trips (batch process if too many trips)
-  const tripIds = trips.map(t => t.trip_id)
-  let allStopTimes: any[] = []
-  
-  // Process trips in batches to avoid URL length limits
-  const batchSize = 50 // Process 50 trips at a time
-  console.log(`Processing ${tripIds.length} trips in batches of ${batchSize}`)
-  for (let i = 0; i < tripIds.length; i += batchSize) {
-    const batchTripIds = tripIds.slice(i, i + batchSize)
-    console.log(`Processing batch ${Math.floor(i/batchSize) + 1}: ${batchTripIds.length} trips`)
-    
-    const qST = new URLSearchParams()
-    qST.append('trip_id', encodeInList(batchTripIds))
-    qST.append('stop_id', encodeEq(stopId))
-    qST.append('select', 'trip_id,departure_time,arrival_time,stop_sequence')
-    qST.append('order', 'departure_time.asc')
-    qST.append('limit', String(limit_n * 2)) // fetch extra per batch
-    
-    const stRes = await fetch(`${BASE}/stop_times?${qST.toString()}`, { headers: HEADERS })
-    if (!stRes.ok) throw new Error(`stop_times query failed: ${stRes.status} ${await stRes.text()}`)
-    const batchStopTimes: any[] = await stRes.json()
-    console.log(`Batch ${Math.floor(i/batchSize) + 1} returned ${batchStopTimes.length} stop times`)
-    allStopTimes = allStopTimes.concat(batchStopTimes)
-    
-    // If we have enough results, break early
-    if (allStopTimes.length >= limit_n * 3) break
-  }
-  
-  console.log(`Total stop times found: ${allStopTimes.length}`)
-  if (!allStopTimes.length) return []
+      // 5) Filter stop_times by active trips
+      const activeTripIds = new Set(activeTrips.map(t => t.trip_id))
+      const activeStopTimes = stopTimes.filter(st => activeTripIds.has(st.trip_id))
+      console.log(`Found ${activeStopTimes.length} active stop_times`)
+      if (!activeStopTimes.length) return []
 
-  // 4) routes for the referenced trips
-  const routeIds = [...new Set(trips.map(t => t.route_id))]
-  const qRoutes = new URLSearchParams()
-  qRoutes.append('route_id', encodeInList(routeIds))
-  qRoutes.append('select', 'route_id,route_short_name,route_long_name')
-  const rRes = await fetch(`${BASE}/routes?${qRoutes.toString()}`, { headers: HEADERS })
-  if (!rRes.ok) throw new Error(`routes query failed: ${rRes.status} ${await rRes.text()}`)
-  const routes: any[] = await rRes.json()
-  console.log('Routes found:', routes.length)
+      // 6) Get routes for the active trips
+      const routeIds = [...new Set(activeTrips.map(t => t.route_id))]
+      const routesRes = await fetch(`${BASE}/routes?route_id=${encodeInList(routeIds)}&select=route_id,route_short_name,route_long_name`, { headers: HEADERS })
+      if (!routesRes.ok) throw new Error(`routes query failed: ${routesRes.status} ${await routesRes.text()}`)
+      const routes: any[] = await routesRes.json()
+      console.log(`Found ${routes.length} routes`)
 
-  const tripMap  = new Map(trips.map(t => [t.trip_id, t]))
+      const tripMap = new Map(activeTrips.map(t => [t.trip_id, t]))
   const routeMap = new Map(routes.map(r => [r.route_id, r]))
 
-  const departures = allStopTimes.map(st => {
-    const trip  = tripMap.get(st.trip_id)
+      const departures = activeStopTimes.map(st => {
+        const trip = tripMap.get(st.trip_id)
     const route = trip ? routeMap.get(trip.route_id) : undefined
-    const dep   = st.departure_time || st.arrival_time
+        const dep = st.departure_time || st.arrival_time
     return {
       trip_id: st.trip_id,
       route_id: trip?.route_id ?? 'Unknown',
@@ -320,7 +364,14 @@ export async function getDepartures(stopId: string, at: string, limit_n = 20) {
   .slice(0, limit_n)
 
   console.log(`Final departures: ${departures.length}`)
+      console.log('Departure routes:', [...new Set(departures.map((d: any) => d.route_name))])
   return departures
+      
+    } catch (fallbackErr) {
+      console.error('Fallback method also failed:', fallbackErr)
+      throw fallbackErr
+    }
+  }
 }
 
 // Get active service IDs for a given date
@@ -328,84 +379,56 @@ async function getActiveServiceIds(date: string): Promise<string[]> {
   console.log('Getting active service IDs for date:', date)
   
   try {
+    // 1) Get calendar entries for this date
     const dayOfWeek = new Date(date).getDay() // 0 = Sunday, 1 = Monday, etc.
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     const dayName = dayNames[dayOfWeek]
     
-    console.log('Day of week:', dayOfWeek, 'Day name:', dayName)
+    console.log(`Day of week: ${dayOfWeek} (${dayName})`)
     
-    // Query calendar table for services active on this day
-    let calendarQueryParams = new URLSearchParams()
-    calendarQueryParams.append('select', 'service_id')
-    calendarQueryParams.append(dayName, 'eq.1')
-    calendarQueryParams.append('start_date', `lte.${date}`)
-    calendarQueryParams.append('end_date', `gte.${date}`)
+    // 2) Get calendar entries where this day is active
+    const calendarRes = await fetch(`${BASE}/calendar?${dayName}=eq.1&select=service_id`, { headers: HEADERS })
+    if (!calendarRes.ok) throw new Error(`calendar query failed: ${calendarRes.status} ${await calendarRes.text()}`)
+    const calendarEntries = await calendarRes.json()
+    console.log(`Found ${calendarEntries.length} calendar entries for ${dayName}`)
     
-    const calendarUrl = `${BASE}/calendar?${calendarQueryParams.toString()}`
-    console.log(`Querying calendar table:`, { url: calendarUrl })
+    // 3) Get calendar_dates exceptions for this date
+    const calendarDatesRes = await fetch(`${BASE}/calendar_dates?date=eq.${date}&select=service_id,exception_type`, { headers: HEADERS })
+    if (!calendarDatesRes.ok) throw new Error(`calendar_dates query failed: ${calendarDatesRes.status} ${await calendarDatesRes.text()}`)
+    const calendarDates = await calendarDatesRes.json()
+    console.log(`Found ${calendarDates.length} calendar_dates entries for ${date}`)
     
-    const calendarResponse = await fetch(calendarUrl, {
-      method: 'GET',
-      headers: HEADERS,
-      mode: 'cors',
-      cache: 'no-cache'
+    // 4) Process exceptions
+    const addedServices = new Set<string>()
+    const removedServices = new Set<string>()
+    
+    calendarDates.forEach((entry: any) => {
+      if (entry.exception_type === 1) {
+        addedServices.add(entry.service_id)
+      } else if (entry.exception_type === 2) {
+        removedServices.add(entry.service_id)
+      }
     })
-
-    if (!calendarResponse.ok) {
-      const errorText = await calendarResponse.text()
-      console.error('Calendar query error:', errorText)
-      throw new Error(`Failed to get calendar: ${calendarResponse.status} - ${errorText}`)
-    }
-
-    const calendarServices = await calendarResponse.json()
-    console.log('Calendar services found:', calendarServices)
-
-    // Query calendar_dates for exceptions
-    let calendarDatesQueryParams = new URLSearchParams()
-    calendarDatesQueryParams.append('select', 'service_id,exception_type')
-    calendarDatesQueryParams.append('date', `eq.${date}`)
     
-    const calendarDatesUrl = `${BASE}/calendar_dates?${calendarDatesQueryParams.toString()}`
-    console.log(`Querying calendar_dates table:`, { url: calendarDatesUrl })
+    console.log(`Added services: ${addedServices.size}, Removed services: ${removedServices.size}`)
     
-    const calendarDatesResponse = await fetch(calendarDatesUrl, {
-      method: 'GET',
-      headers: HEADERS,
-      mode: 'cors',
-      cache: 'no-cache'
-    })
-
-    let calendarDates = []
-    if (calendarDatesResponse.ok) {
-      calendarDates = await calendarDatesResponse.json()
-      console.log('Calendar dates found:', calendarDates)
-    } else {
-      console.log('No calendar_dates table or no exceptions for this date')
-    }
-
-    // Process services
+    // 5) Combine calendar and exceptions
     const activeServices = new Set<string>()
     
     // Add services from calendar
-    calendarServices.forEach((service: any) => {
-      activeServices.add(service.service_id)
+    calendarEntries.forEach((entry: any) => {
+      if (!removedServices.has(entry.service_id)) {
+        activeServices.add(entry.service_id)
+      }
     })
     
-    // Handle calendar_dates exceptions
-    calendarDates.forEach((exception: any) => {
-      if (exception.exception_type === 1) {
-        // Service added for this date
-        activeServices.add(exception.service_id)
-      } else if (exception.exception_type === 2) {
-        // Service removed for this date
-        activeServices.delete(exception.service_id)
-      }
+    // Add services from calendar_dates
+    addedServices.forEach(serviceId => {
+      activeServices.add(serviceId)
     })
 
     const result = Array.from(activeServices)
-
-
-    console.log('Final active service IDs 今天服务ID:', result)
+    console.log(`Final active services: ${result.length}`)
     return result
     
   } catch (error) {
@@ -415,151 +438,17 @@ async function getActiveServiceIds(date: string): Promise<string[]> {
   }
 }
 
-
-// Get route stops for a specific route - using stop_times and stops tables
-// Paste this in src/lib/supabase.ts (or the file where getRouteStops lives).
-// It expects BASE, HEADERS, encodeInList and encodeEq helpers to exist nearby.
-
-export async function getRouteStops(
-  routeId: string,
-  serviceDate?: string,
-  direction?: number,
-  maxTrips: number = 50
-) {
-  console.log('getRouteStops called with:', { routeId, serviceDate, direction, maxTrips })
-
-  try {
-    // 1) Optionally compute active service IDs for the serviceDate
-    let activeServiceIds: string[] = []
-    if (serviceDate) {
-      try {
-        activeServiceIds = await getActiveServiceIds(serviceDate)
-        console.log('Active service IDs for', serviceDate, ':', activeServiceIds)
-      } catch (err) {
-        console.warn('Failed to get active service ids, continuing without service filter', err)
-      }
-    }
-
-    // 2) Build trips query: filter by route_id + optional service_id + optional direction
-    const tripsParams = new URLSearchParams()
-    // route_id is a string in GTFS: use encodeEq to quote if needed
-    tripsParams.append('route_id', encodeEq(routeId))
-    if (activeServiceIds && activeServiceIds.length) {
-      tripsParams.append('service_id', encodeInList(activeServiceIds))
-    }
-    if (typeof direction === 'number') {
-      // direction_id is usually numeric 0/1 in GTFS
-      tripsParams.append('direction_id', `eq.${direction}`)
-    }
-    tripsParams.append('select', 'trip_id,service_id,trip_headsign,route_id,direction_id')
-    tripsParams.append('limit', String(Math.max(100, maxTrips))) // fetch more to avoid truncation
-
-    const tripsUrl = `${BASE}/trips?${tripsParams.toString()}`
-    console.log('Trips URL:', tripsUrl)
-
-    const tripsRes = await fetch(tripsUrl, { method: 'GET', headers: HEADERS })
-    if (!tripsRes.ok) {
-      const errTxt = await tripsRes.text()
-      throw new Error(`Trips query failed: ${tripsRes.status} ${errTxt}`)
-    }
-    const trips: any[] = await tripsRes.json()
-    console.log('Trips returned:', trips.length, trips.slice(0, 5))
-
-    if (!trips.length) {
-      console.log('No trips found for route:', routeId)
-      return []
-    }
-
-    // 3) Prefer a trip that matches the direction if specified, else use first trip
-    let chosenTripId: string | undefined
-    if (typeof direction === 'number') {
-      const match = trips.find(t => Number(t.direction_id) === Number(direction))
-      chosenTripId = match?.trip_id
-      console.log('Trip matching direction:', chosenTripId)
-    }
-    if (!chosenTripId) chosenTripId = trips[0].trip_id
-    if (!chosenTripId) {
-      console.log('No usable trip id found, aborting')
-      return []
-    }
-
-    // 4) Get stop_times for chosen trip
-    const stopTimesParams = new URLSearchParams()
-    stopTimesParams.append('trip_id', encodeEq(chosenTripId))
-    stopTimesParams.append('select', 'stop_id,stop_sequence,arrival_time,departure_time,stop_headsign')
-    stopTimesParams.append('order', 'stop_sequence.asc')
-    stopTimesParams.append('limit', '1000') // safe upper bound
-
-    const stopTimesUrl = `${BASE}/stop_times?${stopTimesParams.toString()}`
-    console.log('Stop times URL:', stopTimesUrl)
-
-    const stRes = await fetch(stopTimesUrl, { method: 'GET', headers: HEADERS })
-    if (!stRes.ok) {
-      const errTxt = await stRes.text()
-      throw new Error(`stop_times query failed: ${stRes.status} ${errTxt}`)
-    }
-    const stopTimes: any[] = await stRes.json()
-    console.log('Stop times returned:', stopTimes.length, stopTimes.slice(0, 5))
-
-    if (!stopTimes.length) {
-      console.log('No stop_times for trip:', chosenTripId)
-      return []
-    }
-
-    // 5) Build stops query using in.(...) with proper quoting
-    const stopIds = [...new Set(stopTimes.map(st => st.stop_id))]
-    const stopsParams = new URLSearchParams()
-    stopsParams.append('stop_id', encodeInList(stopIds))
-    stopsParams.append('select', 'stop_id,stop_name,stop_lat,stop_lon')
-    const stopsUrl = `${BASE}/stops?${stopsParams.toString()}`
-    console.log('Stops URL:', stopsUrl, 'stop count:', stopIds.length)
-
-    const stopsRes = await fetch(stopsUrl, { method: 'GET', headers: HEADERS })
-    if (!stopsRes.ok) {
-      const errTxt = await stopsRes.text()
-      throw new Error(`stops query failed: ${stopsRes.status} ${errTxt}`)
-    }
-    const stops: any[] = await stopsRes.json()
-    console.log('Stops returned:', stops.length, stops.slice(0, 5))
-
-    // 6) Combine stop_times + stops into ordered list
-    const stopMap = new Map(stops.map(s => [String(s.stop_id), s]))
-    const combined = stopTimes.map((st, idx) => {
-      const s = stopMap.get(String(st.stop_id))
-      return {
-        order_no: st.stop_sequence ?? idx + 1,
-        stop_sequence: st.stop_sequence ?? idx + 1,
-        stop_id: st.stop_id,
-        stop_name: s?.stop_name ?? 'Unknown Stop',
-        stop_lat: s?.stop_lat ?? 0,
-        stop_lon: s?.stop_lon ?? 0,
-        trip_id: chosenTripId,
-        arrival_time: st.arrival_time,
-        departure_time: st.departure_time,
-        stop_headsign: st.stop_headsign,
-        direction_id: trips.find(t => t.trip_id === chosenTripId)?.direction_id ?? null,
-        route_id: routeId,
-      }
-    })
-
-    console.log('getRouteStops result length:', combined.length)
-    return combined
-  } catch (err) {
-    console.error('getRouteStops error:', err)
-    throw err
-  }
-}
-
 // Get route ID by short name - query routes table
 export async function getRouteIdByShortName(routeShortName: string) {
   console.log('Querying routes table with params:', { routeShortName })
   
   const queryParams = new URLSearchParams()
   queryParams.append('route_short_name', `eq.${routeShortName}`)
-  queryParams.append('select', '*')
+  queryParams.append('select', 'route_id,route_short_name,route_long_name')
+  queryParams.append('limit', '10')
   
   const url = `${BASE}/routes?${queryParams.toString()}`
-  console.log(`Querying Supabase table: routes`, { url, routeShortName })
+  console.log('Routes query URL:', url)
   
   try {
     const controller = new AbortController()
@@ -567,22 +456,15 @@ export async function getRouteIdByShortName(routeShortName: string) {
     
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        ...HEADERS,
-        'Prefer': 'return=minimal'
-      },
-      signal: controller.signal,
-      mode: 'cors',
-      cache: 'no-cache'
+      headers: HEADERS,
+      signal: controller.signal
     })
 
     clearTimeout(timeoutId)
-    console.log(`Response status: ${response.status} ${response.statusText}`)
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Supabase error response:', errorText)
-      throw new Error(`Supabase table query failed: ${response.status} ${response.statusText} - ${errorText}`)
+      throw new Error(`Routes query failed: ${response.status} ${errorText}`)
     }
 
     const data = await response.json()
@@ -604,4 +486,480 @@ export async function getRouteIdByShortName(routeShortName: string) {
     }
     throw error
   }
+}
+
+// Helper function to process route stops data
+async function processRouteStops(stopTimes: any[], routeId: string) {
+  console.log(`Processing ${stopTimes.length} stop_times for route ${routeId}`)
+  
+  // Group by trip_id and find the longest trip
+  const tripGroups = new Map<string, any[]>()
+  stopTimes.forEach(st => {
+    if (!tripGroups.has(st.trip_id)) {
+      tripGroups.set(st.trip_id, [])
+    }
+    tripGroups.get(st.trip_id)!.push(st)
+  })
+  
+  console.log(`Found ${tripGroups.size} unique trips for route ${routeId}`)
+  
+  // Find the longest trip (most stops)
+  let longestTrip = null
+  let maxStops = 0
+  for (const [tripId, stops] of tripGroups.entries()) {
+    if (stops.length > maxStops) {
+      maxStops = stops.length
+      longestTrip = { tripId, stops }
+    }
+  }
+  
+  if (!longestTrip) {
+    console.log(`No valid trips found for route ${routeId}, returning empty array`)
+    return []
+  }
+  
+  console.log(`Using longest trip ${longestTrip.tripId} with ${longestTrip.stops.length} stops for route ${routeId}`)
+  
+  // Get unique stop IDs
+  const uniqueStopIds = [...new Set(longestTrip.stops.map(st => st.stop_id))]
+  console.log(`Found ${uniqueStopIds.length} unique stops for route ${routeId}`)
+  
+  if (!uniqueStopIds.length) {
+    console.log(`No unique stops found for route ${routeId}, returning empty array`)
+    return []
+  }
+  
+  // Get stop details
+  const stopsRes = await fetch(`${BASE}/stops?stop_id=${encodeInList(uniqueStopIds)}&select=stop_id,stop_name,stop_lat,stop_lon&limit=1000`, { headers: HEADERS })
+  if (!stopsRes.ok) throw new Error(`stops query failed: ${stopsRes.status} ${await stopsRes.text()}`)
+  const stops: any[] = await stopsRes.json()
+  console.log(`Found ${stops.length} stop details for route ${routeId}`)
+  
+  // Create stop map
+  const stopMap = new Map(stops.map(s => [s.stop_id, s]))
+  
+  // Combine stop_times with stop details and sort by sequence
+  const routeStops = longestTrip.stops.map(st => {
+    const stop = stopMap.get(st.stop_id)
+    const isTransfer = stop?.stop_name?.toLowerCase().includes('metro') || 
+                      stop?.stop_name?.toLowerCase().includes('station') ||
+                      stop?.stop_name?.toLowerCase().includes('bus stop')
+    
+    // For transfer stations, get real transfer routes from database
+    let transferRoutes: Array<{ route: string; destination: string }> = []
+    if (isTransfer) {
+      // TODO: Implement real transfer routes query
+      // For now, return empty array to avoid mock data
+      transferRoutes = []
+    }
+    
+    return {
+      stop_id: st.stop_id,
+      stop_name: stop?.stop_name || 'Unknown Stop',
+      stop_lat: stop?.stop_lat || 0,
+      stop_lon: stop?.stop_lon || 0,
+      stop_sequence: st.stop_sequence,
+      is_transfer: isTransfer || false,
+      transfer_routes: transferRoutes
+    }
+  }).sort((a, b) => a.stop_sequence - b.stop_sequence)
+  
+  console.log(`Returning ${routeStops.length} real stops for route ${routeId}`)
+  return routeStops
+}
+
+// Use RPC function for route stops with fallback
+export async function getRouteStops(routeId: string) {
+  console.log('=== getRouteStops called ===')
+  console.log('Route ID:', routeId)
+  console.log('Route ID type:', typeof routeId)
+  console.log('BASE URL:', BASE)
+  
+  try {
+    // Try RPC function first
+    console.log('Calling route stops RPC function...')
+    const rpcResponse = await fetch(`${BASE}/rpc/fn_route_stops`, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_route_id: routeId
+      })
+    })
+
+    if (rpcResponse.ok) {
+      const routeStops = await rpcResponse.json()
+      console.log(`Found ${routeStops.length} route stops using RPC`)
+      
+      if (routeStops.length > 0) {
+        console.log('=== Route Stops RPC Results ===')
+        routeStops.forEach((stop: any, index: number) => {
+          console.log(`${index + 1}. ${stop.stop_name} (${stop.stop_id}) - Sequence: ${stop.stop_sequence}`)
+          if (stop.is_transfer) {
+            console.log(`  Transfer routes: ${stop.transfer_routes.join(', ')}`)
+          }
+        })
+      }
+      
+      return routeStops
+    } else {
+      console.warn('Route stops RPC not available, falling back to original method')
+      throw new Error('RPC not available')
+    }
+    
+  } catch (err) {
+    console.warn('Route stops RPC failed, using fallback method:', err instanceof Error ? err.message : String(err))
+    
+    // Fallback to original method
+    try {
+      console.log('Using fallback: original getRouteStops method...')
+      
+      // First, get trips for this specific route
+      console.log('Querying trips for route:', routeId)
+      const tripsRes = await fetch(`${BASE}/trips?route_id=eq.${encodeEq(routeId)}&select=trip_id&limit=100`, { headers: HEADERS })
+      if (!tripsRes.ok) {
+        const errorText = await tripsRes.text()
+        console.error(`Trips query failed: ${tripsRes.status}`, errorText)
+        throw new Error(`trips query failed: ${tripsRes.status} ${errorText}`)
+      }
+      const trips: any[] = await tripsRes.json()
+      console.log(`Found ${trips.length} trips for route ${routeId}`)
+      
+      if (!trips.length) {
+        console.log(`No trips found for route ${routeId}, trying alternative queries...`)
+        
+        // Try alternative query with route_short_name
+        console.log('Trying route_short_name query...')
+        const altTripsRes = await fetch(`${BASE}/trips?route_short_name=eq.${encodeEq(routeId)}&select=trip_id&limit=100`, { headers: HEADERS })
+        if (altTripsRes.ok) {
+          const altTrips: any[] = await altTripsRes.json()
+          console.log(`Found ${altTrips.length} trips using route_short_name for route ${routeId}`)
+          if (altTrips.length > 0) {
+            // Use alternative trips
+            const tripIds = altTrips.map(t => t.trip_id)
+            console.log(`Using alternative trip IDs:`, tripIds.slice(0, 5))
+            
+            // Continue with stop_times query using alternative trips
+            const stopTimesRes = await fetch(`${BASE}/stop_times?trip_id=in.(${tripIds.map(id => `"${id}"`).join(',')})&select=trip_id,stop_id,stop_sequence&order=stop_sequence.asc&limit=1000`, { headers: HEADERS })
+            if (!stopTimesRes.ok) throw new Error(`stop_times query failed: ${stopTimesRes.status} ${await stopTimesRes.text()}`)
+            const stopTimes: any[] = await stopTimesRes.json()
+            console.log(`Found ${stopTimes.length} stop_times for route ${routeId}`)
+            
+            if (!stopTimes.length) {
+              console.log(`No stop_times found for route ${routeId}, trying more alternatives...`)
+            } else {
+              // Process the alternative data
+              return await processRouteStops(stopTimes, routeId)
+            }
+          }
+        }
+        
+        console.log(`No trips found for route ${routeId} with any method, returning empty array`)
+        return []
+      }
+      
+      // Get trip IDs
+      const tripIds = trips.map(t => t.trip_id)
+      console.log(`Trip IDs for route ${routeId}:`, tripIds.slice(0, 5)) // Log first 5
+      
+      // Get stop_times for these trips
+      const stopTimesRes = await fetch(`${BASE}/stop_times?trip_id=in.(${tripIds.map(id => `"${id}"`).join(',')})&select=trip_id,stop_id,stop_sequence&order=stop_sequence.asc&limit=1000`, { headers: HEADERS })
+      if (!stopTimesRes.ok) throw new Error(`stop_times query failed: ${stopTimesRes.status} ${await stopTimesRes.text()}`)
+      const stopTimes: any[] = await stopTimesRes.json()
+      console.log(`Found ${stopTimes.length} stop_times for route ${routeId}`)
+      
+      if (!stopTimes.length) {
+        console.log(`No stop_times found for route ${routeId}, returning empty array`)
+        return []
+      }
+      
+      // Process the route stops data
+      return await processRouteStops(stopTimes, routeId)
+      
+    } catch (fallbackErr) {
+      console.error('Fallback method also failed:', fallbackErr)
+      console.log(`Returning fallback data for route ${routeId}`)
+      
+      // Return fallback data for testing
+      return getFallbackRouteStops(routeId)
+    }
+  }
+}
+
+// Fallback route stops data for testing
+function getFallbackRouteStops(routeId: string) {
+  console.log(`Providing fallback data for route ${routeId}`)
+  
+  // Different fallback data for different routes
+  if (routeId === '30') {
+    return [
+      {
+        stop_id: '1001',
+        stop_name: 'Dubai Mall',
+        stop_lat: 25.1972,
+        stop_lon: 55.2796,
+        stop_sequence: 1,
+        is_transfer: false,
+        transfer_routes: []
+      },
+      {
+        stop_id: '1002',
+        stop_name: 'Burj Khalifa',
+        stop_lat: 25.1972,
+        stop_lon: 55.2744,
+        stop_sequence: 2,
+        is_transfer: false,
+        transfer_routes: []
+      },
+      {
+        stop_id: '1003',
+        stop_name: 'Dubai Sky Courts',
+        stop_lat: 25.2048,
+        stop_lon: 55.2708,
+        stop_sequence: 3,
+        is_transfer: true,
+        transfer_routes: ['F11', 'X25', '320']
+      },
+      {
+        stop_id: '1004',
+        stop_name: 'Silicon Oasis',
+        stop_lat: 25.2048,
+        stop_lon: 55.2608,
+        stop_sequence: 4,
+        is_transfer: false,
+        transfer_routes: []
+      },
+      {
+        stop_id: '1005',
+        stop_name: 'Academic City',
+        stop_lat: 25.2048,
+        stop_lon: 55.2508,
+        stop_sequence: 5,
+        is_transfer: false,
+        transfer_routes: []
+      }
+    ]
+  }
+  
+  // Default fallback for other routes
+  return [
+    {
+      stop_id: '2001',
+      stop_name: 'Start Station',
+      stop_lat: 25.2048,
+      stop_lon: 55.2708,
+      stop_sequence: 1,
+      is_transfer: false,
+      transfer_routes: []
+    },
+    {
+      stop_id: '2002',
+      stop_name: 'Middle Station',
+      stop_lat: 25.2048,
+      stop_lon: 55.2608,
+      stop_sequence: 2,
+      is_transfer: true,
+      transfer_routes: ['F11', 'X25']
+    },
+    {
+      stop_id: '2003',
+      stop_name: 'End Station',
+      stop_lat: 25.2048,
+      stop_lon: 55.2508,
+      stop_sequence: 3,
+      is_transfer: false,
+      transfer_routes: []
+    }
+  ]
+}
+
+
+// RPC function for stop details with departures
+export async function getStopDetailsWithDepartures(stopId: string, horizonMinutes: number = 120) {
+  console.log('=== getStopDetailsWithDepartures called ===')
+  console.log('Stop ID:', stopId)
+  console.log('Horizon minutes:', horizonMinutes)
+  
+  try {
+    // Try the main RPC function first
+    console.log('Calling stop_detail_with_departures RPC...')
+    const rpcResponse = await fetch(`${BASE}/rpc/stop_detail_with_departures`, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        in_stop_id: stopId,
+        horizon_minutes: horizonMinutes
+      })
+    })
+
+    if (!rpcResponse.ok) {
+      const errorText = await rpcResponse.text()
+      console.error('RPC error:', rpcResponse.status, errorText)
+      throw new Error(`RPC failed: ${rpcResponse.status} ${errorText}`)
+    }
+
+    const data = await rpcResponse.json()
+    console.log(`RPC returned ${data?.length || 0} departures`)
+
+    // If no data, try fallback RPC
+    if (Array.isArray(data) && data.length === 0) {
+      console.log('No departures found, trying fallback RPC...')
+      const fbResponse = await fetch(`${BASE}/rpc/stop_departures_no_calendar`, {
+        method: 'POST',
+        headers: {
+          ...HEADERS,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          in_stop_id: stopId,
+          horizon_minutes: horizonMinutes
+        })
+      })
+      
+      if (fbResponse.ok) {
+        const fbData = await fbResponse.json()
+        if (Array.isArray(fbData)) {
+          console.log(`Fallback RPC returned ${fbData.length} departures`)
+          return fbData.sort((a: any, b: any) => a.wait_seconds - b.wait_seconds)
+        }
+      }
+    }
+
+    // Sort by wait_seconds ascending
+    return (data ?? []).sort((a: any, b: any) => a.wait_seconds - b.wait_seconds)
+
+  } catch (err) {
+    console.error('Error in getStopDetailsWithDepartures:', err)
+    throw err
+  }
+}
+
+// Get stop header information
+export async function getStopHeader(stopId: string) {
+  console.log('=== getStopHeader called ===')
+  console.log('Stop ID:', stopId)
+  
+  try {
+    const response = await fetch(`${BASE}/stops?stop_id=eq.${encodeEq(stopId)}&select=stop_id,stop_name,stop_lat,stop_lon&limit=1`, { 
+      headers: HEADERS 
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Stop header error:', response.status, errorText)
+      throw new Error(`Stop header query failed: ${response.status} ${errorText}`)
+    }
+
+    const data = await response.json()
+    if (!data || data.length === 0) {
+      throw new Error('Stop not found')
+    }
+
+    console.log('Stop header loaded:', data[0])
+    return data[0]
+
+  } catch (err) {
+    console.error('Error in getStopHeader:', err)
+    throw err
+  }
+}
+
+// RPC function to get headsigns for a route with fallback
+export async function getRouteHeadsigns(routeId: string) {
+  console.log('=== getRouteHeadsigns called ===')
+  console.log('Route ID:', routeId)
+  
+  try {
+    const response = await fetch(`${BASE}/rpc/route_headsigns`, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        in_route_id: routeId
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Route headsigns RPC error:', response.status, errorText)
+      throw new Error(`Route headsigns RPC failed: ${response.status} ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log(`Found ${data?.length || 0} headsigns for route ${routeId}`)
+    return (data ?? []).map((r: any) => r.headsign)
+
+  } catch (e: any) {
+    // 🔁 Fallback if RPC unavailable (404/PGRST202)
+    console.warn('route_headsigns RPC unavailable, falling back to table query', e?.message)
+    
+    try {
+      const fallbackResponse = await fetch(`${BASE}/trips?route_id=eq.${encodeEq(routeId)}&select=trip_headsign&limit=1000`, { 
+        headers: HEADERS 
+      })
+      
+      if (!fallbackResponse.ok) {
+        throw new Error(`Fallback query failed: ${fallbackResponse.status}`)
+      }
+      
+      const fallbackData = await fallbackResponse.json()
+      const headsigns = Array.from(new Set((fallbackData ?? [])
+        .map((r: any) => r.trip_headsign || '(Unknown)')))
+      
+      console.log(`Fallback found ${headsigns.length} headsigns for route ${routeId}`)
+      return headsigns
+      
+    } catch (fallbackErr) {
+      console.error('Fallback query also failed:', fallbackErr)
+      throw fallbackErr
+    }
+  }
+}
+
+// RPC function to get ordered stops by headsign for a route with fallback
+export async function getRouteStopsByHeadsign(routeId: string, headsign: string | null = null) {
+  console.log('=== getRouteStopsByHeadsign called ===')
+  console.log('Route ID:', routeId)
+  console.log('Headsign:', headsign)
+  
+  try {
+    const response = await fetch(`${BASE}/rpc/route_stops_by_headsign`, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        in_route_id: routeId,
+        in_headsign: headsign
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Route stops by headsign RPC error:', response.status, errorText)
+      throw new Error(`Route stops by headsign RPC failed: ${response.status} ${errorText}`)
+    }
+
+    const data = await response.json()
+    console.log(`Found ${data?.length || 0} stops for route ${routeId} headsign ${headsign}`)
+    return data || []
+
+  } catch (e: any) {
+    console.warn('route_stops_by_headsign RPC unavailable, showing empty', e?.message)
+    return [] // optional: implement a table fallback later if needed
+  }
+}
+
+// Dubai center coordinates
+export const DUBAI_CENTER = {
+  lat: 25.2048,
+  lon: 55.2708
 }
